@@ -981,7 +981,7 @@ footer .container {
 <nav>
   <div class="nav-inner">
     <a href="#" class="nav-logo">
-      <img src="Appraiseye blue logo.png" alt="Appraiseye" style="height:28px;">
+      <img src="Appraiseye blue logo.png" alt="Appraiseye" style="height:28px; filter: brightness(1.8) saturate(1.2);">
     </a>
     <ul class="nav-links">
       <li><a href="#or-platform">OR Platform</a></li>
@@ -1233,11 +1233,32 @@ footer .container {
     </div>
 
     <!-- AAV Roadmap -->
-    <div style="margin-top:3rem;">
-      <div class="visual-panel padded" style="background: var(--bg-primary);">
-        <img src="AAV_Roadmap-2.png" alt="AAV production roadmap — from cell expansion to fill and finish" loading="lazy">
+    <div class="split-layout" style="margin-top:3rem;">
+      <div class="visual-panel padded" style="background: var(--bg-primary); overflow:hidden;">
+        <img src="AAV_Roadmap-2.png" alt="AAV production roadmap — from cell expansion to fill and finish" loading="lazy" style="max-height:360px; width:auto; margin:0 auto; clip-path: inset(0 8% 5% 0);">
       </div>
-      <p style="text-align:center; font-size:0.82rem; color:var(--gray-500); margin-top:0.75rem;">End-to-end AAV manufacturing pipeline: Cell Expansion &rarr; Transfection &rarr; AAV Generation &rarr; Purification &rarr; QC &rarr; Fill/Finish</p>
+      <div>
+        <h3 style="font-size:1.35rem; color:var(--white); margin-bottom:1rem;">End-to-End AAV Manufacturing</h3>
+        <p style="color:var(--gray-400); margin-bottom:1.25rem; line-height:1.75;">Our fully integrated pipeline covers every stage of AAV production — from initial cell expansion through to final fill and finish.</p>
+        <div style="display:flex; flex-direction:column; gap:0.6rem;">
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <span style="color:var(--purple-400); font-size:1.1rem;">&#x1F9EC;</span>
+            <span style="color:var(--gray-300); font-size:0.92rem;"><strong style="color:var(--white);">Cell Expansion</strong> — HEK-293/HeLa scale-up in Bodhi roller bottles</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <span style="color:var(--purple-400); font-size:1.1rem;">&#x1F52C;</span>
+            <span style="color:var(--gray-300); font-size:0.92rem;"><strong style="color:var(--white);">Transfection &amp; AAV Generation</strong> — Plasmid delivery with real-time monitoring</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <span style="color:var(--purple-400); font-size:1.1rem;">&#x2696;</span>
+            <span style="color:var(--gray-300); font-size:0.92rem;"><strong style="color:var(--white);">Purification &amp; QC</strong> — Cell lysis, purification, and quality testing</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <span style="color:var(--purple-400); font-size:1.1rem;">&#x1F4E6;</span>
+            <span style="color:var(--gray-300); font-size:0.92rem;"><strong style="color:var(--white);">Fill &amp; Finish</strong> — GMP-ready packaging for clinical delivery</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Why Bodhi Wins -->
@@ -1483,14 +1504,14 @@ footer .container {
           <img src="Aria Mahtabfar.jpg" alt="Aria Mahtabfar">
         </div>
         <h3>Aria Mahtabfar, MD</h3>
-        <p class="team-role">Director, Clinical Strategy</p>
+        <p class="team-role">Director Clinical Strategy</p>
       </div>
       <div class="team-card">
         <div class="team-avatar">
           <img src="Morgan Schilling.png" alt="Morgan Schilling">
         </div>
         <h3>Morgan Schilling</h3>
-        <p class="team-role">Director, Medical Sales</p>
+        <p class="team-role">Director Medical Sales</p>
       </div>
       <div class="team-card">
         <div class="team-avatar">
