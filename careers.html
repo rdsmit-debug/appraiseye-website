@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KD9GL2SSX4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-KD9GL2SSX4');
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Careers — Appraiseye | AI Vision for Surgical Safety</title>
+<meta name="description" content="Join Appraiseye and help build AI vision systems that make surgery safer. View open positions in computer vision, clinical engineering, and more.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ========================================
+   RESET & VARIABLES (matching main site)
+   ======================================== */
+:root {
+  --bg-primary: #09071a;
+  --bg-secondary: #0f0c24;
+  --bg-tertiary: #161230;
+  --purple-900: #1a0a3e;
+  --purple-800: #2d1054;
+  --purple-700: #4c1d95;
+  --purple-600: #6b21a8;
+  --purple-500: #8b5cf6;
+  --purple-400: #a78bfa;
+  --purple-300: #c4b5fd;
+  --purple-200: #ddd6fe;
+  --cyan-500: #06b6d4;
+  --cyan-400: #22d3ee;
+  --white: #f8fafc;
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --surface: rgba(255,255,255,0.03);
+  --surface-hover: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.07);
+  --border-hover: rgba(139,92,246,0.35);
+  --glow-purple: rgba(139,92,246,0.15);
+  --glow-cyan: rgba(6,182,212,0.1);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--gray-300);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+img { max-width: 100%; display: block; }
+a { text-decoration: none; }
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+section {
+  padding: 7rem 0;
+  position: relative;
+}
+
+/* ========================================
+   NAV (identical to main site)
+   ======================================== */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  background: rgba(9,7,26,0.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+  transition: all 0.3s;
+}
+.nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  height: 68px;
+}
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.nav-logo img {
+  height: 32px;
+  width: auto;
+}
+.nav-links {
+  display: flex;
+  gap: 0.15rem;
+  list-style: none;
+  align-items: center;
+}
+.nav-links a {
+  color: var(--gray-400);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+.nav-links a:hover {
+  color: var(--white);
+  background: var(--surface-hover);
+}
+.nav-links a.active {
+  color: var(--purple-300);
+}
+.nav-cta {
+  background: var(--purple-600) !important;
+  color: var(--white) !important;
+  padding: 0.45rem 1.25rem !important;
+  border-radius: var(--radius-sm) !important;
+  font-weight: 600 !important;
+}
+.nav-cta:hover {
+  background: var(--purple-700) !important;
+}
+.mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--white);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+.mobile-menu {
+  display: none;
+  position: fixed;
+  top: 68px; left: 0; right: 0; bottom: 0;
+  background: rgba(9,7,26,0.97);
+  backdrop-filter: blur(24px);
+  z-index: 999;
+  padding: 1.5rem 2rem;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.mobile-menu.active { display: flex; }
+.mobile-menu a {
+  color: var(--gray-200);
+  font-size: 1.05rem;
+  font-weight: 500;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  transition: background 0.2s;
+}
+.mobile-menu a:hover { background: var(--surface-hover); }
+
+/* ========================================
+   SHARED COMPONENTS
+   ======================================== */
+.section-eyebrow {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--purple-400);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.section-eyebrow::before {
+  content: '';
+  width: 24px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--purple-500), var(--cyan-500));
+  border-radius: 1px;
+}
+.gradient-text {
+  background: linear-gradient(135deg, var(--purple-400), var(--cyan-400));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, var(--purple-600), var(--purple-700));
+  color: var(--white);
+  padding: 0.8rem 1.75rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.25s;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(139,92,246,0.25);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(139,92,246,0.35);
+}
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--gray-200);
+  padding: 0.8rem 1.75rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: 1px solid var(--border);
+  transition: all 0.25s;
+}
+.btn-secondary:hover {
+  border-color: var(--purple-400);
+  color: var(--white);
+  background: var(--surface);
+}
+
+/* ========================================
+   CAREERS HERO
+   ======================================== */
+.careers-hero {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  padding-top: 68px;
+  position: relative;
+  overflow: hidden;
+}
+.careers-hero .hero-bg-glow {
+  position: absolute;
+  width: 700px; height: 700px;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(140px);
+  opacity: 0.35;
+}
+.careers-hero .glow-1 {
+  top: -30%; right: -10%;
+  background: var(--purple-700);
+}
+.careers-hero .glow-2 {
+  bottom: -40%; left: -15%;
+  background: rgba(6,182,212,0.18);
+}
+.careers-hero-inner {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 780px;
+  margin: 0 auto;
+}
+.careers-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(139,92,246,0.1);
+  border: 1px solid rgba(139,92,246,0.2);
+  border-radius: 100px;
+  padding: 0.35rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--purple-300);
+  margin-bottom: 1.75rem;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.careers-hero-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--cyan-400);
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.5; } 50% { opacity: 1; }
+}
+.careers-hero h1 {
+  font-size: clamp(2.5rem, 5vw, 3.8rem);
+  font-weight: 800;
+  color: var(--white);
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.03em;
+}
+.careers-hero p {
+  font-size: 1.15rem;
+  color: var(--gray-400);
+  line-height: 1.8;
+  margin-bottom: 2.5rem;
+  max-width: 620px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.careers-hero .hero-ctas {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* scroll hint */
+.scroll-hint {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--gray-500);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.scroll-hint span {
+  width: 1px;
+  height: 28px;
+  background: linear-gradient(180deg, var(--purple-500), transparent);
+  animation: scrollPulse 2s ease-in-out infinite;
+}
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.3; height: 28px; }
+  50% { opacity: 0.8; height: 36px; }
+}
+
+/* ========================================
+   CULTURE PILLARS
+   ======================================== */
+.pillars {
+  padding: 5rem 0;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+.pillar-card {
+  padding: 2.5rem 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: all 0.35s ease;
+  position: relative;
+  overflow: hidden;
+}
+.pillar-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--purple-500), var(--cyan-500));
+  opacity: 0;
+  transition: opacity 0.35s;
+}
+.pillar-card:hover {
+  border-color: var(--border-hover);
+  background: var(--surface-hover);
+  transform: translateY(-4px);
+}
+.pillar-card:hover::before {
+  opacity: 1;
+}
+.pillar-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: rgba(139,92,246,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  margin-bottom: 1.5rem;
+}
+.pillar-card h3 {
+  font-size: 1.2rem;
+  color: var(--white);
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+.pillar-card p {
+  font-size: 0.95rem;
+  color: var(--gray-400);
+  line-height: 1.7;
+}
+
+/* ========================================
+   OPEN POSITIONS
+   ======================================== */
+.positions {
+  padding: 7rem 0;
+}
+.positions-header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+.positions-header h2 {
+  font-size: clamp(2rem, 3.5vw, 2.8rem);
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 0.75rem;
+}
+.positions-header p {
+  font-size: 1.05rem;
+  color: var(--gray-400);
+  max-width: 550px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+.job-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+.job-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(139,92,246,0.3), rgba(6,182,212,0.2));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.35s;
+  pointer-events: none;
+}
+.job-card:hover {
+  background: var(--surface-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 40px rgba(139,92,246,0.08);
+}
+.job-card:hover::after {
+  opacity: 1;
+}
+
+.job-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 1.25rem;
+}
+.job-title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 0.4rem;
+}
+.job-subtitle {
+  font-size: 0.95rem;
+  color: var(--purple-300);
+  font-weight: 500;
+}
+.job-tags {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin: 1rem 0 1.25rem;
+}
+.job-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.85rem;
+  border-radius: 100px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  color: var(--gray-300);
+  font-family: 'Space Grotesk', sans-serif;
+}
+.job-tag-icon {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+.job-description {
+  font-size: 0.95rem;
+  color: var(--gray-400);
+  line-height: 1.75;
+  margin-bottom: 1.5rem;
+  max-width: 800px;
+}
+
+.job-details-toggle {
+  color: var(--purple-400);
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: color 0.2s;
+  padding: 0;
+}
+.job-details-toggle:hover { color: var(--purple-300); }
+.job-details-toggle .arrow {
+  transition: transform 0.3s;
+  display: inline-block;
+}
+.job-details-toggle.expanded .arrow { transform: rotate(180deg); }
+
+.job-details {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease, padding 0.3s ease;
+}
+.job-details.open {
+  max-height: 2000px;
+  padding-top: 1.5rem;
+}
+.job-details-inner {
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+}
+
+.detail-section {
+  margin-bottom: 1.75rem;
+}
+.detail-section h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--purple-300);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 0.75rem;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.detail-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.detail-list li {
+  font-size: 0.9rem;
+  color: var(--gray-400);
+  line-height: 1.65;
+  padding-left: 1.25rem;
+  position: relative;
+}
+.detail-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple-500), var(--cyan-500));
+}
+
+.job-card-bottom {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  margin-top: 1.5rem;
+}
+
+/* ========================================
+   WHY JOIN SECTION
+   ======================================== */
+.why-join {
+  padding: 7rem 0;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.why-join-header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+.why-join-header h2 {
+  font-size: clamp(2rem, 3.5vw, 2.8rem);
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 0.75rem;
+}
+.why-join-header p {
+  font-size: 1.05rem;
+  color: var(--gray-400);
+  max-width: 550px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+.why-card {
+  padding: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: all 0.3s ease;
+}
+.why-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+}
+.why-card h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--white);
+  margin-bottom: 0.5rem;
+}
+.why-card p {
+  font-size: 0.9rem;
+  color: var(--gray-400);
+  line-height: 1.7;
+}
+
+/* ========================================
+   CTA SECTION
+   ======================================== */
+.careers-cta {
+  padding: 7rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.careers-cta .cta-glow {
+  position: absolute;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: var(--purple-700);
+  filter: blur(160px);
+  opacity: 0.15;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.careers-cta h2 {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+}
+.careers-cta p {
+  font-size: 1.05rem;
+  color: var(--gray-400);
+  max-width: 520px;
+  margin: 0 auto 2.5rem;
+  line-height: 1.7;
+  position: relative;
+  z-index: 1;
+}
+.careers-cta .cta-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+/* ========================================
+   FOOTER
+   ======================================== */
+footer {
+  padding: 2rem 0;
+  border-top: 1px solid var(--border);
+}
+footer .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+footer p {
+  font-size: 0.8rem;
+  color: var(--gray-600);
+}
+.footer-links {
+  display: flex;
+  gap: 1.5rem;
+}
+.footer-links a {
+  color: var(--gray-500);
+  font-size: 0.8rem;
+  transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--purple-400); }
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+.fade-in {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.stagger-1 { transition-delay: 0.05s; }
+.stagger-2 { transition-delay: 0.1s; }
+.stagger-3 { transition-delay: 0.15s; }
+.stagger-4 { transition-delay: 0.2s; }
+.stagger-5 { transition-delay: 0.25s; }
+.stagger-6 { transition-delay: 0.3s; }
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .mobile-toggle { display: block; }
+
+  .careers-hero { min-height: 50vh; }
+  .careers-hero h1 { font-size: 2rem; }
+
+  .pillars-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .why-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .job-card { padding: 1.75rem; }
+  .job-card-top { flex-direction: column; gap: 0.75rem; }
+
+  section { padding: 4rem 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== NAV ===================== -->
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <img src="Appraiseye blue logo.png" alt="Appraiseye" style="height:28px; filter: brightness(1.8) saturate(1.2);">
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html#or-platform">OR Platform</a></li>
+      <li><a href="index.html#bodhi">Bodhi CGT</a></li>
+      <li><a href="index.html#research">Research</a></li>
+      <li><a href="index.html#team">Team</a></li>
+      <li><a href="careers.html" class="active">Careers</a></li>
+      <li><a href="index.html#contact" class="nav-cta">Contact</a></li>
+    </ul>
+    <button class="mobile-toggle" onclick="document.querySelector('.mobile-menu').classList.toggle('active'); this.textContent = this.textContent === '\u2630' ? '\u2715' : '\u2630';">&equiv;</button>
+  </div>
+</nav>
+<div class="mobile-menu">
+  <a href="index.html#or-platform" onclick="this.parentElement.classList.remove('active')">OR Platform</a>
+  <a href="index.html#bodhi" onclick="this.parentElement.classList.remove('active')">Bodhi CGT</a>
+  <a href="index.html#research" onclick="this.parentElement.classList.remove('active')">Research</a>
+  <a href="index.html#team" onclick="this.parentElement.classList.remove('active')">Team</a>
+  <a href="careers.html" onclick="this.parentElement.classList.remove('active')">Careers</a>
+  <a href="index.html#contact" onclick="this.parentElement.classList.remove('active')">Contact</a>
+</div>
+
+<!-- ===================== HERO ===================== -->
+<section class="careers-hero">
+  <div class="hero-bg-glow glow-1"></div>
+  <div class="hero-bg-glow glow-2"></div>
+  <div class="container">
+    <div class="careers-hero-inner">
+      <div class="careers-hero-badge">Now Hiring</div>
+      <h1>Build AI That Makes <span class="gradient-text">Surgery Safer</span></h1>
+      <p>Join a team of engineers, surgeons, and scientists developing vision systems that protect patients in the operating room and advance cell &amp; gene therapy manufacturing.</p>
+      <div class="hero-ctas">
+        <a href="#open-positions" class="btn-primary">View Open Positions &#8595;</a>
+        <a href="index.html#team" class="btn-secondary">Meet the Team</a>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <span></span>
+  </div>
+</section>
+
+<!-- ===================== CULTURE PILLARS ===================== -->
+<section class="pillars">
+  <div class="container">
+    <div class="pillars-grid">
+      <div class="pillar-card fade-in stagger-1">
+        <div class="pillar-icon">&#x1F52C;</div>
+        <h3>Real-World Impact</h3>
+        <p>Your code ships to hospitals. Every model improvement directly reduces wrong-instrument surgical errors and improves patient outcomes at leading medical institutions.</p>
+      </div>
+      <div class="pillar-card fade-in stagger-2">
+        <div class="pillar-icon">&#x1F680;</div>
+        <h3>Ownership &amp; Speed</h3>
+        <p>Early-stage team, funded programmes, clear direction. You won't wait years to see your work deployed &mdash; features ship in weeks, not quarters.</p>
+      </div>
+      <div class="pillar-card fade-in stagger-3">
+        <div class="pillar-icon">&#x1F30D;</div>
+        <h3>Cambridge &amp; Philadelphia</h3>
+        <p>Based in two of the world's strongest biotech ecosystems, with clinical validation partners at Thomas Jefferson, UCL, Temple University, and more.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== OPEN POSITIONS ===================== -->
+<section class="positions" id="open-positions">
+  <div class="container">
+    <div class="positions-header">
+      <div class="section-eyebrow" style="justify-content:center;">Open Positions</div>
+      <h2>Current Opportunities</h2>
+      <p>We're growing our team across AI engineering, clinical operations, and product development.</p>
+    </div>
+
+    <!-- Job Card: AI Vision Engineer -->
+    <div class="job-card fade-in">
+      <div class="job-card-top">
+        <div>
+          <div class="job-title">AI Vision Engineer</div>
+          <div class="job-subtitle">Sterile Processing &amp; Surgical Instrument Recognition</div>
+        </div>
+      </div>
+      <div class="job-tags">
+        <span class="job-tag"><span class="job-tag-icon">&#x1F4CD;</span> Cambridge, UK</span>
+        <span class="job-tag"><span class="job-tag-icon">&#x1F4BC;</span> Full-Time or Internship</span>
+        <span class="job-tag"><span class="job-tag-icon">&#x1F9E0;</span> Computer Vision &amp; Deep Learning</span>
+        <span class="job-tag"><span class="job-tag-icon">&#x1F465;</span> Reports to CEO / CSO</span>
+      </div>
+      <p class="job-description">
+        Own and improve the core vision pipeline that identifies surgical instruments being packed into trays. This is not a research-only position &mdash; you will ship production code that runs in real OR environments. Work across the full ML lifecycle: data preparation, model training, evaluation, deployment, and monitoring.
+      </p>
+
+      <button class="job-details-toggle" onclick="toggleDetails(this)">
+        View Full Details <span class="arrow">&#x25BC;</span>
+      </button>
+
+      <div class="job-details">
+        <div class="job-details-inner">
+          <div class="detail-section">
+            <h4>Key Responsibilities</h4>
+            <ul class="detail-list">
+              <li>Improve instrument identification accuracy across diverse tray configurations and lighting conditions</li>
+              <li>Reduce inference latency for real-time feedback during the packing workflow</li>
+              <li>Build robustness against edge cases: reflective surfaces, overlapping instruments, partial occlusions, and variable wear</li>
+              <li>Develop and maintain the data pipeline (annotation, augmentation, model retraining)</li>
+              <li>Collaborate with the clinical team to translate SPD workflow requirements into technical specifications</li>
+              <li>Contribute to expanding platform capabilities: instrument condition assessment, tray completeness verification, and hospital inventory integration</li>
+            </ul>
+          </div>
+
+          <div class="detail-section">
+            <h4>Essential Requirements</h4>
+            <ul class="detail-list">
+              <li>Strong foundation in computer vision and deep learning (object detection, instance segmentation, image classification)</li>
+              <li>Hands-on experience with PyTorch or TensorFlow and modern vision architectures (YOLO, Detectron2, Vision Transformers, or similar)</li>
+              <li>Proficiency in Python; comfort with Git and collaborative development</li>
+              <li>Ability to work across the full ML lifecycle: data preparation, model training, evaluation, deployment, and monitoring</li>
+              <li>Genuine interest in building systems that work reliably in the real world, not just on benchmarks</li>
+            </ul>
+          </div>
+
+          <div class="detail-section">
+            <h4>Highly Valued</h4>
+            <ul class="detail-list">
+              <li>Experience with edge deployment and model optimisation (ONNX, TensorRT, quantisation)</li>
+              <li>Background in fine-grained visual recognition, metallic/reflective object detection, or industrial inspection</li>
+              <li>Familiarity with camera systems, lighting setups, and physical constraints of real-world vision deployments</li>
+              <li>Experience with MLOps tooling (experiment tracking, data versioning, CI/CD for ML)</li>
+              <li>Published research or a Master's/PhD project in a relevant area</li>
+            </ul>
+          </div>
+
+          <div class="detail-section">
+            <h4>Internship Track</h4>
+            <ul class="detail-list">
+              <li>Structured 3-month paid internship with a clear conversion path to a full-time role</li>
+              <li>Designed around a concrete deliverable &mdash; for example, improving instrument segmentation robustness under variable SPD lighting</li>
+              <li>Suited to final-year undergraduates, Master's students, or recent graduates looking for high-ownership roles</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="job-card-bottom">
+        <a href="mailto:info@appraiseye.com?subject=AI%20Vision%20Engineer%20Application" class="btn-primary">Apply Now &#8594;</a>
+        <a href="mailto:info@appraiseye.com?subject=AI%20Vision%20Engineer%20%E2%80%94%20Question" class="btn-secondary">Ask a Question</a>
+      </div>
+    </div>
+
+    <!-- Placeholder for future roles -->
+    <div class="job-card fade-in" style="text-align:center; padding: 3rem 2rem;">
+      <p style="color: var(--gray-500); font-size: 0.95rem; margin-bottom: 0.5rem;">More roles coming soon</p>
+      <p style="color: var(--gray-400); font-size: 0.9rem;">Don't see your role listed? We're always interested in hearing from exceptional people.</p>
+      <div style="margin-top: 1.5rem;">
+        <a href="mailto:info@appraiseye.com?subject=General%20Application" class="btn-secondary">Send a General Application</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================== WHY JOIN ===================== -->
+<section class="why-join">
+  <div class="container">
+    <div class="why-join-header">
+      <div class="section-eyebrow" style="justify-content:center;">Why Appraiseye</div>
+      <h2>What Sets Us Apart</h2>
+      <p>We're building technology that matters, with a team that moves fast and cares deeply.</p>
+    </div>
+    <div class="why-grid">
+      <div class="why-card fade-in stagger-1">
+        <h3>&#x1F3AF; End-to-End Ownership</h3>
+        <p>You won't be tuning a sub-module inside a giant pipeline. You'll own core systems end-to-end and see your decisions ship to real clinical environments.</p>
+      </div>
+      <div class="why-card fade-in stagger-2">
+        <h3>&#x1F3E5; Direct Patient Impact</h3>
+        <p>Every improvement directly reduces the risk of wrong-instrument surgical errors. This is not an abstract metric &mdash; it affects real patients.</p>
+      </div>
+      <div class="why-card fade-in stagger-3">
+        <h3>&#x1F91D; World-Class Clinical Network</h3>
+        <p>Work alongside surgeons, SPD professionals, and clinical researchers at top-tier medical institutions including Thomas Jefferson, UCL, and Temple University.</p>
+      </div>
+      <div class="why-card fade-in stagger-4">
+        <h3>&#x1F4C8; Growth Trajectory</h3>
+        <p>Early-stage team with NIH SBIR funding, Innovate UK grants, published research, and a clear product-market direction. Equity and advancement commensurate with contribution.</p>
+      </div>
+      <div class="why-card fade-in stagger-5">
+        <h3>&#x1F9EC; Cambridge Ecosystem</h3>
+        <p>Be part of one of the strongest AI and biotech clusters in the world, with access to the university, Babraham Research Campus, and a thriving startup community.</p>
+      </div>
+      <div class="why-card fade-in stagger-6">
+        <h3>&#x1F310; Visa Sponsorship</h3>
+        <p>We welcome applications regardless of background and are happy to sponsor UK work visas for exceptional candidates.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== HOW TO APPLY CTA ===================== -->
+<section class="careers-cta">
+  <div class="cta-glow"></div>
+  <div class="container">
+    <h2>Ready to Apply?</h2>
+    <p>Send a short note explaining what excites you about this problem, your CV or LinkedIn profile, and a link to any relevant work &mdash; GitHub, a dissertation, a Kaggle competition, or published papers.</p>
+    <div class="cta-buttons">
+      <a href="mailto:info@appraiseye.com?subject=Appraiseye%20Application" class="btn-primary">Email Us &#8594;</a>
+      <a href="https://www.linkedin.com/company/appraiseye" target="_blank" class="btn-secondary">Follow on LinkedIn</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FOOTER ===================== -->
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Appraiseye Inc. All rights reserved. Appraiseye is an equal opportunity employer.</p>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="https://www.linkedin.com/company/appraiseye" target="_blank">LinkedIn</a>
+      <a href="https://x.com/rd_smitMD" target="_blank">X</a>
+      <a href="https://www.researchgate.net/profile/Rupert-Smit" target="_blank">ResearchGate</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ===================== SCRIPTS ===================== -->
+<script>
+// Toggle job details
+function toggleDetails(btn) {
+  const details = btn.nextElementSibling;
+  details.classList.toggle('open');
+  btn.classList.toggle('expanded');
+  btn.innerHTML = details.classList.contains('open')
+    ? 'Hide Details <span class="arrow">&#x25BC;</span>'
+    : 'View Full Details <span class="arrow">&#x25BC;</span>';
+}
+
+// Scroll animations
+document.addEventListener('DOMContentLoaded', () => {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  // Nav scroll effect
+  const nav = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    nav.style.background = window.scrollY > 50 ? 'rgba(9,7,26,0.95)' : 'rgba(9,7,26,0.8)';
+  });
+});
+</script>
+
+</body>
+</html>
