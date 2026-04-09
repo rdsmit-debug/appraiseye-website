@@ -606,6 +606,225 @@ nav {
 }
 
 /* ========================================
+   APPLICATION FORM
+   ======================================== */
+.apply-form-wrapper {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.apply-form-wrapper.open {
+  max-height: 1200px;
+}
+.apply-form {
+  border-top: 1px solid var(--border);
+  margin-top: 1.5rem;
+  padding-top: 2rem;
+}
+.apply-form-header {
+  margin-bottom: 1.75rem;
+}
+.apply-form-header h3 {
+  font-size: 1.15rem;
+  color: var(--white);
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+.apply-form-header p {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+  line-height: 1.6;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+.form-group label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--gray-300);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.form-group label .required {
+  color: var(--purple-400);
+  margin-left: 2px;
+}
+.form-group input,
+.form-group textarea,
+.form-group select {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.9rem;
+  color: var(--white);
+  font-size: 0.9rem;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.25s, box-shadow 0.25s;
+  outline: none;
+}
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--gray-600);
+}
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  border-color: var(--purple-500);
+  box-shadow: 0 0 0 3px rgba(139,92,246,0.12);
+}
+.form-group textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+.form-group select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  padding-right: 2.2rem;
+}
+.form-group select option {
+  background: var(--bg-secondary);
+  color: var(--white);
+}
+
+/* File upload */
+.file-upload-area {
+  position: relative;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: rgba(255,255,255,0.015);
+}
+.file-upload-area:hover,
+.file-upload-area.dragover {
+  border-color: var(--purple-500);
+  background: rgba(139,92,246,0.04);
+}
+.file-upload-area input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.file-upload-icon {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.6;
+}
+.file-upload-text {
+  font-size: 0.85rem;
+  color: var(--gray-400);
+  line-height: 1.5;
+}
+.file-upload-text strong {
+  color: var(--purple-400);
+}
+.file-upload-hint {
+  font-size: 0.72rem;
+  color: var(--gray-600);
+  margin-top: 0.35rem;
+}
+.file-name-display {
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  padding: 0.45rem 0.75rem;
+  background: rgba(139,92,246,0.08);
+  border: 1px solid rgba(139,92,246,0.2);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--purple-300);
+}
+.file-name-display.visible {
+  display: inline-flex;
+}
+.file-remove {
+  background: none;
+  border: none;
+  color: var(--gray-500);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0 0.15rem;
+  line-height: 1;
+  transition: color 0.2s;
+}
+.file-remove:hover { color: var(--white); }
+
+/* Submit area */
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.75rem;
+  flex-wrap: wrap;
+}
+.form-actions .btn-primary {
+  min-width: 160px;
+  justify-content: center;
+}
+.form-note {
+  font-size: 0.75rem;
+  color: var(--gray-600);
+  line-height: 1.5;
+}
+
+/* Success / error states */
+.form-status {
+  display: none;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  line-height: 1.5;
+}
+.form-status.success {
+  display: block;
+  background: rgba(6,182,212,0.08);
+  border: 1px solid rgba(6,182,212,0.25);
+  color: var(--cyan-400);
+}
+.form-status.error {
+  display: block;
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.25);
+  color: #f87171;
+}
+
+/* Spinner */
+.btn-spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: var(--white);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================
    WHY JOIN SECTION
    ======================================== */
 .why-join {
@@ -929,8 +1148,88 @@ footer p {
       </div>
 
       <div class="job-card-bottom">
-        <a href="mailto:info@appraiseye.com?subject=AI%20Vision%20Engineer%20Application" class="btn-primary">Apply Now &#8594;</a>
+        <button class="btn-primary" onclick="toggleApplyForm(this)">Apply Now &#8594;</button>
         <a href="mailto:info@appraiseye.com?subject=AI%20Vision%20Engineer%20%E2%80%94%20Question" class="btn-secondary">Ask a Question</a>
+      </div>
+
+      <!-- Inline Application Form -->
+      <div class="apply-form-wrapper" id="apply-form-wrapper">
+        <form class="apply-form" id="apply-form" action="https://formspree.io/f/mykbavzp" method="POST" enctype="multipart/form-data">
+          <input type="hidden" name="_subject" value="New Application: AI Vision Engineer">
+          <div class="apply-form-header">
+            <h3>Apply for AI Vision Engineer</h3>
+            <p>No formal cover letter needed &mdash; just tell us what excites you about this problem.</p>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Full Name <span class="required">*</span></label>
+              <input type="text" name="name" placeholder="Jane Smith" required>
+            </div>
+
+            <div class="form-group">
+              <label>Email <span class="required">*</span></label>
+              <input type="email" name="email" placeholder="jane@example.com" required>
+            </div>
+
+            <div class="form-group">
+              <label>LinkedIn Profile</label>
+              <input type="url" name="linkedin" placeholder="https://linkedin.com/in/...">
+            </div>
+
+            <div class="form-group">
+              <label>GitHub / Portfolio</label>
+              <input type="url" name="portfolio" placeholder="https://github.com/...">
+            </div>
+
+            <div class="form-group">
+              <label>Applying As <span class="required">*</span></label>
+              <select name="track" required>
+                <option value="" disabled selected>Select a track</option>
+                <option value="Full-Time">Full-Time</option>
+                <option value="Internship">Internship (3-month, paid)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Location / Visa Status</label>
+              <input type="text" name="location" placeholder="e.g. Based in London, UK work authorised">
+            </div>
+
+            <div class="form-group full-width">
+              <label>What excites you about this role? <span class="required">*</span></label>
+              <textarea name="message" placeholder="A few sentences about why this problem interests you and what you'd bring to the team..." required></textarea>
+            </div>
+
+            <div class="form-group full-width">
+              <label>CV / Resume <span class="required">*</span></label>
+              <div class="file-upload-area" id="cv-upload-area">
+                <input type="file" name="cv" id="cv-input" accept=".pdf,.doc,.docx" required>
+                <div class="file-upload-icon">&#x1F4C4;</div>
+                <div class="file-upload-text"><strong>Click to upload</strong> or drag and drop</div>
+                <div class="file-upload-hint">PDF, DOC, or DOCX &mdash; max 5 MB</div>
+              </div>
+              <div class="file-name-display" id="cv-file-name">
+                <span id="cv-name-text"></span>
+                <button type="button" class="file-remove" onclick="clearFile()">&times;</button>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label>Additional Links</label>
+              <input type="text" name="additional_links" placeholder="Kaggle, dissertation, papers, side projects...">
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" id="submit-btn">
+              Submit Application &#8594;
+            </button>
+            <span class="form-note">Your information will be sent directly to the Appraiseye team. We review every application.</span>
+          </div>
+
+          <div class="form-status" id="form-status"></div>
+        </form>
       </div>
     </div>
 
@@ -1020,6 +1319,103 @@ function toggleDetails(btn) {
     ? 'Hide Details <span class="arrow">&#x25BC;</span>'
     : 'View Full Details <span class="arrow">&#x25BC;</span>';
 }
+
+// Toggle apply form
+function toggleApplyForm(btn) {
+  const wrapper = document.getElementById('apply-form-wrapper');
+  const isOpen = wrapper.classList.contains('open');
+  wrapper.classList.toggle('open');
+  btn.innerHTML = isOpen ? 'Apply Now &#8594;' : 'Close Application &#x2715;';
+  if (!isOpen) {
+    setTimeout(() => {
+      wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
+  }
+}
+
+// File upload handling
+const cvInput = document.getElementById('cv-input');
+const cvUploadArea = document.getElementById('cv-upload-area');
+const cvFileName = document.getElementById('cv-file-name');
+const cvNameText = document.getElementById('cv-name-text');
+
+cvInput.addEventListener('change', function() {
+  if (this.files.length > 0) {
+    const file = this.files[0];
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File must be under 5 MB.');
+      this.value = '';
+      return;
+    }
+    cvNameText.textContent = file.name;
+    cvFileName.classList.add('visible');
+    cvUploadArea.style.borderColor = 'var(--purple-500)';
+  }
+});
+
+function clearFile() {
+  cvInput.value = '';
+  cvFileName.classList.remove('visible');
+  cvUploadArea.style.borderColor = '';
+}
+
+// Drag and drop
+cvUploadArea.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  cvUploadArea.classList.add('dragover');
+});
+cvUploadArea.addEventListener('dragleave', () => {
+  cvUploadArea.classList.remove('dragover');
+});
+cvUploadArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  cvUploadArea.classList.remove('dragover');
+  if (e.dataTransfer.files.length > 0) {
+    cvInput.files = e.dataTransfer.files;
+    cvInput.dispatchEvent(new Event('change'));
+  }
+});
+
+// Form submission via Formspree
+const form = document.getElementById('apply-form');
+const submitBtn = document.getElementById('submit-btn');
+const formStatus = document.getElementById('form-status');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const originalText = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<span class="btn-spinner"></span> Submitting...';
+  submitBtn.disabled = true;
+  formStatus.className = 'form-status';
+  formStatus.style.display = 'none';
+
+  try {
+    const data = new FormData(form);
+    const response = await fetch(form.action, {
+      method: 'POST',
+      body: data,
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (response.ok) {
+      formStatus.className = 'form-status success';
+      formStatus.textContent = 'Application received! We\'ll be in touch soon. Thank you for your interest in Appraiseye.';
+      formStatus.style.display = 'block';
+      form.reset();
+      cvFileName.classList.remove('visible');
+      cvUploadArea.style.borderColor = '';
+      submitBtn.innerHTML = 'Submitted &#10003;';
+    } else {
+      throw new Error('Submission failed');
+    }
+  } catch (err) {
+    formStatus.className = 'form-status error';
+    formStatus.textContent = 'Something went wrong. Please try again or email your application directly to info@appraiseye.com.';
+    formStatus.style.display = 'block';
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+  }
+});
 
 // Scroll animations
 document.addEventListener('DOMContentLoaded', () => {
