@@ -979,22 +979,56 @@ footer p {
   .nav-links { display: none; }
   .mobile-toggle { display: block; }
 
-  .careers-hero { min-height: 50vh; }
-  .careers-hero h1 { font-size: 2rem; }
+  .careers-hero { min-height: auto; padding-top: 100px; padding-bottom: 3rem; }
+  .careers-hero h1 { font-size: 1.85rem; }
+  .careers-hero p { font-size: 1rem; }
 
   .pillars-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
+  .pillar-card { padding: 1.75rem 1.5rem; }
 
   .why-grid {
     grid-template-columns: 1fr;
   }
 
-  .job-card { padding: 1.75rem; }
+  .job-card { padding: 1.5rem; }
   .job-card-top { flex-direction: column; gap: 0.75rem; }
+  .job-title { font-size: 1.2rem; }
+  .job-tags { gap: 0.4rem; }
+  .job-tag { font-size: 0.72rem; padding: 0.25rem 0.7rem; }
+
+  .job-card-bottom { flex-direction: column; align-items: stretch; }
+  .job-card-bottom .btn-primary,
+  .job-card-bottom .btn-secondary { text-align: center; justify-content: center; }
+
+  .hero-ctas { flex-direction: column; }
+  .hero-ctas .btn-primary,
+  .hero-ctas .btn-secondary { width: 100%; justify-content: center; }
+
+  .careers-cta .cta-buttons { flex-direction: column; align-items: center; }
+  .careers-cta .cta-buttons .btn-primary,
+  .careers-cta .cta-buttons .btn-secondary { width: 100%; max-width: 300px; justify-content: center; }
+
+  .positions-header h2,
+  .why-join-header h2,
+  .careers-cta h2 { font-size: 1.6rem; }
 
   section { padding: 4rem 0; }
+
+  .scroll-hint { display: none; }
+
+  footer .container { flex-direction: column; gap: 0.75rem; text-align: center; }
+}
+
+@media (max-width: 400px) {
+  .careers-hero h1 { font-size: 1.5rem; }
+  .container { padding: 0 1.25rem; }
+  .job-card { padding: 1.25rem; }
+  .form-group input,
+  .form-group textarea,
+  .form-group select { font-size: 16px; }
 }
 </style>
 </head>
