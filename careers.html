@@ -1176,8 +1176,9 @@ footer p {
 
       <!-- Inline Application Form -->
       <div class="apply-form-wrapper">
-        <form class="apply-form" action="https://formsubmit.co/ajax/rsmit@appraiseye.com" method="POST" enctype="multipart/form-data">
+        <form class="apply-form" action="https://formsubmit.co/rsmit@appraiseye.com" method="POST" enctype="multipart/form-data">
           <input type="hidden" name="_subject" value="New Application: AI Vision Engineer">
+          <input type="hidden" name="_next" value="https://appraiseye.io/careers.html?submitted=ai-vision-engineer">
           <input type="hidden" name="_captcha" value="false">
           <input type="hidden" name="_template" value="table">
           <input type="text" name="_honey" style="display:none">
@@ -1340,8 +1341,9 @@ footer p {
 
       <!-- Inline Application Form -->
       <div class="apply-form-wrapper">
-        <form class="apply-form" action="https://formsubmit.co/ajax/rsmit@appraiseye.com" method="POST" enctype="multipart/form-data">
+        <form class="apply-form" action="https://formsubmit.co/rsmit@appraiseye.com" method="POST" enctype="multipart/form-data">
           <input type="hidden" name="_subject" value="New Application: Stem Cell & CGT Research Scientist">
+          <input type="hidden" name="_next" value="https://appraiseye.io/careers.html?submitted=stem-cell-scientist">
           <input type="hidden" name="_captcha" value="false">
           <input type="hidden" name="_template" value="table">
           <input type="text" name="_honey" style="display:none">
@@ -1510,7 +1512,7 @@ document.querySelectorAll('.file-upload-area').forEach(area => {
         this.value = '';
         return;
       }
-      nameText.textContent = file.name;
+      nameText.textContent = 'Successfully uploaded ' + file.name;
       display.classList.add('visible');
       area.classList.add('has-file');
       area.style.borderColor = 'var(--cyan-500)';
@@ -1547,7 +1549,7 @@ document.querySelectorAll('.file-upload-area').forEach(area => {
         input.value = '';
         return;
       }
-      nameText.textContent = file.name;
+      nameText.textContent = 'Successfully uploaded ' + file.name;
       display.classList.add('visible');
       area.classList.add('has-file');
       area.style.borderColor = 'var(--cyan-500)';
@@ -1555,49 +1557,37 @@ document.querySelectorAll('.file-upload-area').forEach(area => {
   });
 });
 
-// Form submission for all apply forms
+// Show submit spinner while form posts (native submit, not AJAX)
 document.querySelectorAll('.apply-form').forEach(form => {
   const submitBtn = form.querySelector('button[type="submit"]');
-  const formStatus = form.querySelector('.form-status');
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const originalText = submitBtn.innerHTML;
+  form.addEventListener('submit', () => {
     submitBtn.innerHTML = '<span class="btn-spinner"></span> Submitting...';
     submitBtn.disabled = true;
-    formStatus.className = 'form-status';
-    formStatus.style.display = 'none';
-
-    try {
-      const data = new FormData(form);
-      const response = await fetch(form.action, {
-        method: 'POST',
-        body: data,
-        headers: { 'Accept': 'application/json' }
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        formStatus.className = 'form-status success';
-        formStatus.textContent = 'Application received! We\'ll be in touch soon. Thank you for your interest in Appraiseye.';
-        formStatus.style.display = 'block';
-        form.reset();
-        form.querySelectorAll('.file-name-display').forEach(d => d.classList.remove('visible'));
-        form.querySelectorAll('.file-upload-area').forEach(a => { a.classList.remove('has-file'); a.style.borderColor = ''; });
-        submitBtn.innerHTML = 'Submitted &#10003;';
-      } else {
-        throw new Error(result.message || 'Submission failed');
-      }
-    } catch (err) {
-      formStatus.className = 'form-status error';
-      formStatus.textContent = 'Something went wrong: ' + err.message + '. You can also email your application directly to rsmit@appraiseye.com.';
-      formStatus.style.display = 'block';
-      submitBtn.innerHTML = originalText;
-      submitBtn.disabled = false;
-    }
   });
 });
+
+// Detect redirect back from FormSubmit and show success banner
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const submitted = params.get('submitted');
+  if (!submitted) return;
+
+  // Clean the URL without reloading
+  history.replaceState(null, '', window.location.pathname);
+
+  // Create success banner at top of positions section
+  const banner = document.createElement('div');
+  banner.className = 'form-status success';
+  banner.style.display = 'block';
+  banner.style.marginBottom = '2rem';
+  banner.style.textAlign = 'center';
+  banner.textContent = 'Application received! We\u2019ll be in touch soon. Thank you for your interest in Appraiseye.';
+  const positionsHeader = document.querySelector('.positions-header');
+  if (positionsHeader) {
+    positionsHeader.parentElement.insertBefore(banner, positionsHeader.nextSibling);
+    banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+})();
 
 // Scroll animations
 document.addEventListener('DOMContentLoaded', () => {
