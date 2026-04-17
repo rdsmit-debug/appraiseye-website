@@ -1065,7 +1065,7 @@ footer p {
 <div class="mobile-menu">
   <a href="index.html#or-platform" onclick="this.parentElement.classList.remove('active')">OR Platform</a>
   <a href="index.html#bodhi" onclick="this.parentElement.classList.remove('active')">Bodhi CGT</a>
-  <a href="index.html#research" onclick="this.parentElement.classList.remove('active')">Research</a>
+  <a href="index.html#publications" onclick="this.parentElement.classList.remove('active')">Publications</a>
   <a href="index.html#team" onclick="this.parentElement.classList.remove('active')">Team</a>
   <a href="careers.html" onclick="this.parentElement.classList.remove('active')">Careers</a>
   <a href="index.html#contact" onclick="this.parentElement.classList.remove('active')">Contact</a>
@@ -1176,8 +1176,11 @@ footer p {
 
       <!-- Inline Application Form -->
       <div class="apply-form-wrapper">
-        <form class="apply-form" action="https://formspree.io/f/mykbavzp" method="POST" enctype="multipart/form-data">
+        <form class="apply-form" action="https://formsubmit.co/ajax/rsmit@appraiseye.com" method="POST" enctype="multipart/form-data">
           <input type="hidden" name="_subject" value="New Application: AI Vision Engineer">
+          <input type="hidden" name="_captcha" value="false">
+          <input type="hidden" name="_template" value="table">
+          <input type="text" name="_honey" style="display:none">
           <div class="apply-form-header">
             <h3>Apply for AI Vision Engineer</h3>
             <p>No formal cover letter needed &mdash; just tell us what excites you about this problem.</p>
@@ -1337,8 +1340,11 @@ footer p {
 
       <!-- Inline Application Form -->
       <div class="apply-form-wrapper">
-        <form class="apply-form" action="https://formspree.io/f/mykbavzp" method="POST" enctype="multipart/form-data">
+        <form class="apply-form" action="https://formsubmit.co/ajax/rsmit@appraiseye.com" method="POST" enctype="multipart/form-data">
           <input type="hidden" name="_subject" value="New Application: Stem Cell & CGT Research Scientist">
+          <input type="hidden" name="_captcha" value="false">
+          <input type="hidden" name="_template" value="table">
+          <input type="text" name="_honey" style="display:none">
           <div class="apply-form-header">
             <h3>Apply for Stem Cell &amp; CGT Research Scientist</h3>
             <p>No formal cover letter needed &mdash; tell us what excites you about this role and how your background fits.</p>
@@ -1564,7 +1570,7 @@ document.querySelectorAll('.apply-form').forEach(form => {
 
     try {
       const data = new FormData(form);
-      const response = await fetch('https://formspree.io/f/mykbavzp', {
+      const response = await fetch(form.action, {
         method: 'POST',
         body: data,
         headers: { 'Accept': 'application/json' }
@@ -1572,7 +1578,7 @@ document.querySelectorAll('.apply-form').forEach(form => {
 
       const result = await response.json();
 
-      if (response.ok && !result.errors) {
+      if (response.ok && result.success) {
         formStatus.className = 'form-status success';
         formStatus.textContent = 'Application received! We\'ll be in touch soon. Thank you for your interest in Appraiseye.';
         formStatus.style.display = 'block';
@@ -1581,8 +1587,7 @@ document.querySelectorAll('.apply-form').forEach(form => {
         form.querySelectorAll('.file-upload-area').forEach(a => { a.classList.remove('has-file'); a.style.borderColor = ''; });
         submitBtn.innerHTML = 'Submitted &#10003;';
       } else {
-        const msg = result.errors ? result.errors.map(e => e.message).join(', ') : 'Submission failed';
-        throw new Error(msg);
+        throw new Error(result.message || 'Submission failed');
       }
     } catch (err) {
       formStatus.className = 'form-status error';
