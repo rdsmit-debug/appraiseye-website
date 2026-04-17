@@ -744,16 +744,27 @@ nav {
   display: none;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 0.6rem;
-  padding: 0.45rem 0.75rem;
-  background: rgba(139,92,246,0.08);
-  border: 1px solid rgba(139,92,246,0.2);
+  margin-top: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: rgba(6,182,212,0.08);
+  border: 1px solid rgba(6,182,212,0.25);
   border-radius: var(--radius-sm);
-  font-size: 0.8rem;
-  color: var(--purple-300);
+  font-size: 0.85rem;
+  color: var(--cyan-400);
+  font-weight: 500;
+}
+.file-name-display::before {
+  content: '\2713';
+  font-weight: 700;
+  font-size: 1rem;
 }
 .file-name-display.visible {
   display: inline-flex;
+}
+.file-upload-area.has-file .file-upload-icon,
+.file-upload-area.has-file .file-upload-text,
+.file-upload-area.has-file .file-upload-hint {
+  opacity: 0.35;
 }
 .file-remove {
   background: none;
@@ -1495,13 +1506,15 @@ document.querySelectorAll('.file-upload-area').forEach(area => {
       }
       nameText.textContent = file.name;
       display.classList.add('visible');
-      area.style.borderColor = 'var(--purple-500)';
+      area.classList.add('has-file');
+      area.style.borderColor = 'var(--cyan-500)';
     }
   });
 
   removeBtn.addEventListener('click', () => {
     input.value = '';
     display.classList.remove('visible');
+    area.classList.remove('has-file');
     area.style.borderColor = '';
   });
 
@@ -1538,28 +1551,29 @@ document.querySelectorAll('.apply-form').forEach(form => {
 
     try {
       const data = new FormData(form);
-      const response = await fetch(form.action, {
+      const response = await fetch('https://formspree.io/f/mykbavzp', {
         method: 'POST',
         body: data,
         headers: { 'Accept': 'application/json' }
       });
 
-      if (response.ok) {
+      const result = await response.json();
+
+      if (response.ok && !result.errors) {
         formStatus.className = 'form-status success';
         formStatus.textContent = 'Application received! We\'ll be in touch soon. Thank you for your interest in Appraiseye.';
         formStatus.style.display = 'block';
         form.reset();
-        const display = form.querySelector('.file-name-display');
-        const area = form.querySelector('.file-upload-area');
-        if (display) display.classList.remove('visible');
-        if (area) area.style.borderColor = '';
+        form.querySelectorAll('.file-name-display').forEach(d => d.classList.remove('visible'));
+        form.querySelectorAll('.file-upload-area').forEach(a => { a.classList.remove('has-file'); a.style.borderColor = ''; });
         submitBtn.innerHTML = 'Submitted &#10003;';
       } else {
-        throw new Error('Submission failed');
+        const msg = result.errors ? result.errors.map(e => e.message).join(', ') : 'Submission failed';
+        throw new Error(msg);
       }
     } catch (err) {
       formStatus.className = 'form-status error';
-      formStatus.textContent = 'Something went wrong. Please try again or email your application directly to rsmit@appraiseye.com.';
+      formStatus.textContent = 'Something went wrong: ' + err.message + '. You can also email your application directly to rsmit@appraiseye.com.';
       formStatus.style.display = 'block';
       submitBtn.innerHTML = originalText;
       submitBtn.disabled = false;
