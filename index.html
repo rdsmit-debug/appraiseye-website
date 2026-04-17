@@ -998,9 +998,94 @@ footer .container {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* ========================================
+   SCROLL PROGRESS BAR
+   ======================================== */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 0;
+  background: linear-gradient(90deg, var(--purple-500), var(--cyan-400));
+  z-index: 1001;
+  transition: width 0.08s linear;
+  will-change: width;
+}
+
+/* ========================================
+   ACTIVE NAV STATE
+   ======================================== */
+.nav-links a.active {
+  color: var(--white);
+  background: var(--surface-hover);
+}
+.nav-links a:not(.nav-cta)::after {
+  content: '';
+  display: block;
+  height: 2px;
+  width: 0;
+  background: linear-gradient(90deg, var(--purple-400), var(--cyan-400));
+  transition: width 0.3s ease;
+  margin-top: 2px;
+  border-radius: 1px;
+}
+.nav-links a.active:not(.nav-cta)::after {
+  width: 100%;
+}
+
+/* ========================================
+   CARD CURSOR GLOW
+   ======================================== */
+.card {
+  --mx: 50%;
+  --my: 50%;
+}
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(350px circle at var(--mx) var(--my), rgba(139,92,246,0.14), transparent 45%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+.card:hover::after { opacity: 1; }
+
+/* ========================================
+   HERO GENTLE MOTION
+   ======================================== */
+@keyframes hero-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.hero-image-wrapper {
+  animation: hero-float 7s ease-in-out infinite;
+}
+.hero-bg-glow {
+  will-change: transform;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ========================================
+   REDUCED MOTION
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .hero-image-wrapper { animation: none; }
+  .fade-in { opacity: 1; transform: none; }
+}
 </style>
 </head>
 <body>
+
+<div class="scroll-progress" aria-hidden="true"></div>
 
 <!-- ===================== NAV ===================== -->
 <nav>
@@ -1036,7 +1121,7 @@ footer .container {
   <div class="hero-bg-glow glow-2"></div>
   <div class="container">
     <div class="hero-content">
-      <div class="hero-badge">Optimization Through AI Vision</div>
+      <div class="hero-badge">Optimization Through AI Vision Systems</div>
       <h1>AI Vision for the <span class="gradient-text">Operating Room</span> & Cell & Gene Therapy</h1>
       <p>Computer vision and AI that streamline surgical workflows, eliminate instrument redundancy, and automate CGT manufacturing.</p>
       <div class="hero-ctas">
@@ -1424,7 +1509,10 @@ footer .container {
 <!-- ===================== SCROLL ANIMATIONS ===================== -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // Fade-in on scroll
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Fade-in on scroll with staggered delay by sibling index
+  const fadeSelector = '.card, .team-card, .news-card, .pub-item, .ip-card, .stat-item, .gallery-item';
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
@@ -1434,20 +1522,98 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
-  document.querySelectorAll('.card, .team-card, .news-card, .pub-item, .ip-card, .stat-item, .gallery-item').forEach(el => {
+  document.querySelectorAll(fadeSelector).forEach(el => {
     el.classList.add('fade-in');
+    if (!reducedMotion) {
+      const sibs = el.parentElement.children;
+      let idx = 0;
+      for (let i = 0; i < sibs.length; i++) { if (sibs[i] === el) { idx = i; break; } }
+      el.style.transitionDelay = Math.min(idx * 0.08, 0.4) + 's';
+    }
     observer.observe(el);
   });
 
-  // Nav background on scroll
+  // Nav background on scroll + scroll progress bar + hero glow parallax
   const nav = document.querySelector('nav');
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 50) {
-      nav.style.background = 'rgba(9,7,26,0.95)';
-    } else {
-      nav.style.background = 'rgba(9,7,26,0.8)';
+  const progress = document.querySelector('.scroll-progress');
+  const glows = document.querySelectorAll('.hero-bg-glow');
+  let ticking = false;
+  const onScroll = () => {
+    const y = window.scrollY;
+    nav.style.background = y > 50 ? 'rgba(9,7,26,0.95)' : 'rgba(9,7,26,0.8)';
+    const docH = document.documentElement.scrollHeight - window.innerHeight;
+    progress.style.width = docH > 0 ? (y / docH * 100) + '%' : '0%';
+    if (!reducedMotion) {
+      glows.forEach((g, i) => {
+        g.style.transform = 'translateY(' + (y * (0.15 + i * 0.08)).toFixed(1) + 'px)';
+      });
     }
+    ticking = false;
+  };
+  window.addEventListener('scroll', () => {
+    if (!ticking) { requestAnimationFrame(onScroll); ticking = true; }
+  }, { passive: true });
+
+  // Active nav section highlighting
+  const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
+  const sectionIds = Array.from(navLinks)
+    .map(a => a.getAttribute('href').slice(1))
+    .filter(id => id && document.getElementById(id));
+  const sections = sectionIds.map(id => document.getElementById(id));
+  const setActive = () => {
+    const scrollY = window.scrollY + 120;
+    let current = '';
+    sections.forEach(s => { if (s.offsetTop <= scrollY) current = s.id; });
+    navLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  };
+  window.addEventListener('scroll', setActive, { passive: true });
+  setActive();
+
+  // Card cursor-follow glow
+  document.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const rect = card.getBoundingClientRect();
+      card.style.setProperty('--mx', (e.clientX - rect.left) + 'px');
+      card.style.setProperty('--my', (e.clientY - rect.top) + 'px');
+    });
   });
+
+  // Animated stat counters
+  const parseStat = (txt) => {
+    const m = txt.match(/^(\D*)(\d+(?:\.\d+)?)(.*)$/);
+    return m ? { prefix: m[1], num: parseFloat(m[2]), suffix: m[3], isInt: !m[2].includes('.') } : null;
+  };
+  const statEls = document.querySelectorAll('.stats-grid .stat-item h3');
+  statEls.forEach(el => {
+    const parsed = parseStat(el.textContent.trim());
+    if (!parsed) return;
+    el.dataset.orig = el.textContent.trim();
+    if (!reducedMotion) el.textContent = parsed.prefix + '0' + parsed.suffix;
+  });
+  const statObs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target;
+      const p = parseStat(el.dataset.orig || el.textContent.trim());
+      if (!p) { statObs.unobserve(el); return; }
+      if (reducedMotion) { el.textContent = el.dataset.orig; statObs.unobserve(el); return; }
+      const duration = 1400;
+      const start = performance.now();
+      const tick = (now) => {
+        const t = Math.min(1, (now - start) / duration);
+        const eased = 1 - Math.pow(1 - t, 3);
+        const val = p.num * eased;
+        const display = p.isInt ? Math.round(val) : val.toFixed(1);
+        el.textContent = p.prefix + display + p.suffix;
+        if (t < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+      statObs.unobserve(el);
+    });
+  }, { threshold: 0.4 });
+  statEls.forEach(el => statObs.observe(el));
 });
 </script>
 
