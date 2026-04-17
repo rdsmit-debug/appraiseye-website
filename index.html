@@ -1017,22 +1017,29 @@ footer .container {
 /* ========================================
    ACTIVE NAV STATE
    ======================================== */
+.nav-links a {
+  position: relative;
+}
 .nav-links a.active {
   color: var(--white);
   background: var(--surface-hover);
 }
 .nav-links a:not(.nav-cta)::after {
   content: '';
-  display: block;
+  position: absolute;
+  left: 0.85rem;
+  right: 0.85rem;
+  bottom: 0.15rem;
   height: 2px;
-  width: 0;
   background: linear-gradient(90deg, var(--purple-400), var(--cyan-400));
-  transition: width 0.3s ease;
-  margin-top: 2px;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.3s ease;
   border-radius: 1px;
+  pointer-events: none;
 }
 .nav-links a.active:not(.nav-cta)::after {
-  width: 100%;
+  transform: scaleX(1);
 }
 
 /* ========================================
