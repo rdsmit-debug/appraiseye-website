@@ -1530,8 +1530,21 @@ document.querySelectorAll('.file-upload-area').forEach(area => {
     e.preventDefault();
     area.classList.remove('dragover');
     if (e.dataTransfer.files.length > 0) {
-      input.files = e.dataTransfer.files;
-      input.dispatchEvent(new Event('change'));
+      // Use DataTransfer to assign files (works cross-browser)
+      const dt = new DataTransfer();
+      dt.items.add(e.dataTransfer.files[0]);
+      input.files = dt.files;
+      // Manually trigger the display update
+      const file = e.dataTransfer.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File must be under 5 MB.');
+        input.value = '';
+        return;
+      }
+      nameText.textContent = file.name;
+      display.classList.add('visible');
+      area.classList.add('has-file');
+      area.style.borderColor = 'var(--cyan-500)';
     }
   });
 });
