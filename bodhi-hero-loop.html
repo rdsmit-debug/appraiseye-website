@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Bodhi — Appraiseye</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #07021a;
+    --bg-mid: #150535;
+    --purple-1: #8B5CF6;
+    --purple-2: #A855F7;
+    --purple-3: #C084FC;
+    --purple-glow: #6D28D9;
+    --pink-accent: #EC4899;
+    --green-cell: #4ADE80;
+    --green-mask: #84CC16;
+    --amber: #F59E0B;
+    --steel-1: #4B5563;
+    --steel-2: #9CA3AF;
+    --steel-3: #D1D5DB;
+    --text-primary: #F9FAFB;
+    --text-dim: rgba(249, 250, 251, 0.55);
+    --text-mute: rgba(249, 250, 251, 0.35);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+    height: 100%;
+  }
+
+  .stage {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    background:
+      radial-gradient(ellipse 60% 80% at 80% 30%, rgba(139, 92, 246, 0.18), transparent 60%),
+      radial-gradient(ellipse 50% 70% at 20% 80%, rgba(168, 85, 247, 0.12), transparent 60%),
+      linear-gradient(135deg, var(--bg-deep) 0%, var(--bg-mid) 100%);
+    overflow: hidden;
+  }
+
+  /* Subtle grain texture */
+  .stage::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+    opacity: 0.06;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+  }
+
+  .scene {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  svg.bodhi-svg {
+    width: 100%;
+    height: 100%;
+    max-width: 1600px;
+  }
+
+  /* ---------- TIMING ----------
+     Total loop: 14s
+     Beat 1 (Wide): 0  - 3.5s
+     Beat 2 (Push in / cell zoom): 3.5 - 6.5s
+     Beat 3 (AI vision overlay): 6.5 - 10s
+     Beat 4 (Fault isolation + pull-back): 10 - 14s
+  --------------------------------- */
+
+  /* Camera scenes - shown/hidden via opacity */
+  .scene-wide      { animation: showWide 14s infinite ease-in-out; }
+  .scene-zoom      { animation: showZoom 14s infinite ease-in-out; }
+  .scene-vision    { animation: showVision 14s infinite ease-in-out; }
+  .scene-isolation { animation: showIsolation 14s infinite ease-in-out; }
+
+  @keyframes showWide {
+    0%, 22% { opacity: 1; }
+    25%, 95% { opacity: 0; }
+    98%, 100% { opacity: 1; }
+  }
+  @keyframes showZoom {
+    0%, 22% { opacity: 0; }
+    25%, 42% { opacity: 1; }
+    45%, 100% { opacity: 0; }
+  }
+  @keyframes showVision {
+    0%, 42% { opacity: 0; }
+    47%, 68% { opacity: 1; }
+    72%, 100% { opacity: 0; }
+  }
+  @keyframes showIsolation {
+    0%, 68% { opacity: 0; }
+    72%, 92% { opacity: 1; }
+    95%, 100% { opacity: 0; }
+  }
+
+  /* Roller bottles spin around their LONG axis (rotisserie style), not end-over-end.
+     In 2D we convey this by sliding the highlight stripe along the bottle surface,
+     not by rotating the bottle itself. The .roller class is now a no-op visually;
+     the .roll-stripe inside the bottle symbol does the work. */
+  .roller {
+    /* bottle stays fixed horizontally — no transform */
+  }
+  .roll-stripe-light {
+    animation: stripeSlide 2.4s linear infinite;
+  }
+  .roll-stripe-dark {
+    animation: stripeSlide 2.4s linear infinite;
+    animation-delay: -1.2s;
+  }
+  @keyframes stripeSlide {
+    /* The stripe is 156px wide and the bottle interior is 156px wide.
+       Slide vertically across the bottle's diameter (44px) to look like
+       the surface is rotating toward us. */
+    0%   { transform: translateY(-22px); opacity: 0; }
+    15%  { opacity: 0.6; }
+    50%  { transform: translateY(0px);   opacity: 0.8; }
+    85%  { opacity: 0.6; }
+    100% { transform: translateY(22px);  opacity: 0; }
+  }
+
+  /* The crescent (cells + media settled by gravity) is STATIC at the bottom.
+     This is biologically correct — adherent cells follow the bottle wall during
+     rotation, and the media level is always at the lowest point.
+     The "rolling" cue comes from the .rim-highlight that orbits around. */
+  .crescent {
+    /* no animation — settled state is static */
+  }
+
+  /* Rim highlight: a small bright spot on the porthole inner wall that orbits
+     around once per 6 seconds, suggesting the bottle's internal surface is rotating.
+     This is the visual proof of motion without faking the cells. */
+  .rim-highlight {
+    transform-origin: 0 0;
+    animation: rimOrbit 6s linear infinite;
+  }
+  @keyframes rimOrbit {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  /* Status LEDs breathing */
+  .led {
+    animation: breathe 2s ease-in-out infinite;
+  }
+  .led-2 { animation-delay: 0.3s; }
+  .led-3 { animation-delay: 0.6s; }
+  @keyframes breathe {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  /* Bottle 7 soft fault halo — fades in during the isolation beat.
+     Applied to a radial-gradient ellipse (fill stays constant, only opacity changes). */
+  .bottle-fault {
+    opacity: 0;
+    animation: faultHalo 14s infinite;
+  }
+  @keyframes faultHalo {
+    0%, 70% { opacity: 0; }
+    74%, 90% { opacity: 1; }
+    93%, 100% { opacity: 0; }
+  }
+
+  /* Amber status strip under bottle 7 */
+  .bottle-fault-strip {
+    opacity: 0;
+    animation: faultStrip 14s infinite;
+  }
+  @keyframes faultStrip {
+    0%, 70% { opacity: 0; }
+    74%, 90% { opacity: 0.85; }
+    93%, 100% { opacity: 0; }
+  }
+
+  .other-bottle-glow {
+    animation: greenGlow 14s infinite;
+  }
+  @keyframes greenGlow {
+    0%, 70% { opacity: 0; }
+    74%, 90% { opacity: 0.6; }
+    93%, 100% { opacity: 0; }
+  }
+
+  /* AI vision segmentation mask reveal */
+  .seg-mask {
+    animation: segReveal 14s infinite;
+  }
+  @keyframes segReveal {
+    0%, 50% { opacity: 0; }
+    55%, 65% { opacity: 0.85; }
+    68%, 100% { opacity: 0; }
+  }
+
+  /* Scanning line */
+  .scan-line {
+    animation: scan 14s infinite;
+  }
+  @keyframes scan {
+    0%, 47% { transform: translateY(0); opacity: 0; }
+    48% { opacity: 0.9; }
+    62% { transform: translateY(220px); opacity: 0.9; }
+    65%, 100% { opacity: 0; transform: translateY(0); }
+  }
+
+  /* Cell growth pulse */
+  .cell {
+    animation: cellPulse 4s ease-in-out infinite;
+  }
+  .cell:nth-child(2n) { animation-delay: 0.5s; }
+  .cell:nth-child(3n) { animation-delay: 1.1s; }
+  .cell:nth-child(5n) { animation-delay: 1.7s; }
+  @keyframes cellPulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.08); }
+  }
+
+  /* HUD readouts */
+  .hud-text {
+    font-family: 'JetBrains Mono', monospace;
+    fill: var(--text-primary);
+  }
+  .hud-label {
+    font-family: 'Inter', sans-serif;
+    fill: var(--text-dim);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .hud-value {
+    font-family: 'JetBrains Mono', monospace;
+    fill: var(--purple-3);
+    font-weight: 500;
+  }
+
+  /* Brand mark */
+  .brand-mark {
+    position: absolute;
+    top: 36px;
+    left: 40px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, var(--purple-3), var(--purple-glow));
+    box-shadow: 0 0 18px rgba(168, 85, 247, 0.6);
+    position: relative;
+  }
+  .brand-dot::after {
+    content: '';
+    position: absolute;
+    inset: 7px;
+    border-radius: 50%;
+    background: var(--bg-deep);
+  }
+  .brand-text {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 18px;
+    letter-spacing: 0.02em;
+  }
+  .brand-text b {
+    color: var(--purple-2);
+    font-weight: 600;
+  }
+
+  /* Tagline bottom-right */
+  .tagline {
+    position: absolute;
+    bottom: 36px;
+    right: 40px;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-mute);
+    z-index: 10;
+  }
+
+  /* Caption that changes per beat */
+  /* Caption that changes per beat. */
+  .caption {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 10;
+    width: 90%;
+    max-width: 600px;
+  }
+
+  .caption-line {
+    display: block;
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    opacity: 0;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    bottom: 0;
+  }
+  .caption-line em {
+    font-style: italic;
+    color: var(--purple-3);
+  }
+
+  .caption-1 { animation: cap1 14s infinite; }
+  .caption-2 { animation: cap2 14s infinite; }
+  .caption-3 { animation: cap3 14s infinite; }
+  .caption-4 { animation: cap4 14s infinite; }
+
+  @keyframes cap1 {
+    0%, 3% { opacity: 0; transform: translateX(-50%) translateY(8px); }
+    8%, 22% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    25%, 100% { opacity: 0; }
+  }
+  @keyframes cap2 {
+    0%, 25% { opacity: 0; transform: translateX(-50%) translateY(8px); }
+    30%, 42% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    45%, 100% { opacity: 0; }
+  }
+  @keyframes cap3 {
+    0%, 47% { opacity: 0; transform: translateX(-50%) translateY(8px); }
+    52%, 65% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    68%, 100% { opacity: 0; }
+  }
+  @keyframes cap4 {
+    0%, 70% { opacity: 0; transform: translateX(-50%) translateY(8px); }
+    74%, 92% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    96%, 100% { opacity: 0; }
+  }
+
+  /* Beat indicator dots */
+  .beat-dots {
+    position: absolute;
+    bottom: 38px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+  }
+  .beat-dot {
+    width: 24px;
+    height: 2px;
+    background: var(--text-mute);
+    border-radius: 1px;
+    overflow: hidden;
+    position: relative;
+  }
+  .beat-dot::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--purple-2);
+    transform: translateX(-100%);
+  }
+  .beat-dot:nth-child(1)::after { animation: dotFill 14s infinite; animation-delay: 0s; }
+  .beat-dot:nth-child(2)::after { animation: dotFill 14s infinite; animation-delay: 3.5s; }
+  .beat-dot:nth-child(3)::after { animation: dotFill 14s infinite; animation-delay: 6.5s; }
+  .beat-dot:nth-child(4)::after { animation: dotFill 14s infinite; animation-delay: 10s; }
+
+  @keyframes dotFill {
+    0% { transform: translateX(-100%); }
+    25%, 100% { transform: translateX(0); }
+  }
+
+  /* Connection line decorative */
+  .connector {
+    stroke: var(--purple-2);
+    stroke-width: 1;
+    fill: none;
+    opacity: 0.5;
+    stroke-dasharray: 3 3;
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- Brand mark top-left -->
+  <div class="brand-mark">
+    <div class="brand-dot"></div>
+    <div class="brand-text">appr<b>AI</b>seye</div>
+  </div>
+
+  <!-- Tagline bottom-right -->
+  <div class="tagline">Bodhi · CGT Robot</div>
+
+  <!-- Beat indicator dots -->
+  <div class="beat-dots">
+    <div class="beat-dot"></div>
+    <div class="beat-dot"></div>
+    <div class="beat-dot"></div>
+    <div class="beat-dot"></div>
+  </div>
+
+  <!-- Caption (changes per beat) -->
+  <div class="caption">
+    <span class="caption-line caption-1">Self-contained. <em>Multi-layered.</em></span>
+    <span class="caption-line caption-2">Adherent biology, <em>preserved.</em></span>
+    <span class="caption-line caption-3">In-process QC, <em>per bottle.</em></span>
+    <span class="caption-line caption-4">Individualized. <em>Programmable.</em></span>
+  </div>
+
+  <!-- Main scene -->
+  <div class="scene">
+    <svg class="bodhi-svg" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+
+      <!-- ============ DEFINITIONS ============ -->
+      <defs>
+        <!-- Steel cabinet gradients -->
+        <linearGradient id="steelFront" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#3A3F4A"/>
+          <stop offset="0.5" stop-color="#7A8290"/>
+          <stop offset="1" stop-color="#3A3F4A"/>
+        </linearGradient>
+        <linearGradient id="steelTop" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#9CA3AF"/>
+          <stop offset="1" stop-color="#4B5563"/>
+        </linearGradient>
+        <linearGradient id="glassGradient" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#1F2937" stop-opacity="0.4"/>
+          <stop offset="0.5" stop-color="#374151" stop-opacity="0.2"/>
+          <stop offset="1" stop-color="#1F2937" stop-opacity="0.4"/>
+        </linearGradient>
+        <linearGradient id="bottleGradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#E5E7EB" stop-opacity="0.85"/>
+          <stop offset="0.5" stop-color="#F3F4F6" stop-opacity="0.95"/>
+          <stop offset="1" stop-color="#D1D5DB" stop-opacity="0.85"/>
+        </linearGradient>
+        <radialGradient id="bottleEnd" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#374151"/>
+          <stop offset="1" stop-color="#111827"/>
+        </radialGradient>
+
+        <!-- Purple glow for screen -->
+        <radialGradient id="screenGlow" cx="0.5" cy="0.5" r="0.6">
+          <stop offset="0" stop-color="#A855F7" stop-opacity="0.45"/>
+          <stop offset="0.5" stop-color="#6D28D9" stop-opacity="0.25"/>
+          <stop offset="1" stop-color="#0A0420" stop-opacity="0"/>
+        </radialGradient>
+
+        <!-- Cell zoom backdrop -->
+        <radialGradient id="cellBackdrop" cx="0.5" cy="0.5" r="0.7">
+          <stop offset="0" stop-color="#1a0d3a"/>
+          <stop offset="1" stop-color="#07021a"/>
+        </radialGradient>
+
+        <!-- Soft amber halo for bottle 7 fault state -->
+        <radialGradient id="faultHalo" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0"   stop-color="#F59E0B" stop-opacity="0.55"/>
+          <stop offset="0.5" stop-color="#F59E0B" stop-opacity="0.25"/>
+          <stop offset="1"   stop-color="#F59E0B" stop-opacity="0"/>
+        </radialGradient>
+
+        <!-- BOTTLE BODY (end-on view): opaque pinkish-white plastic+media combo.
+             Sphere-style radial shading: bright upper-left (light from cabinet ceiling),
+             darker lower-right. Reads as a CONTAINED 3D cylinder seen end-on, not a window. -->
+        <radialGradient id="bottleBody" cx="0.32" cy="0.28" r="0.85">
+          <stop offset="0"    stop-color="#FAEAEA"/>
+          <stop offset="0.45" stop-color="#E8C8C8"/>
+          <stop offset="0.85" stop-color="#B8888A"/>
+          <stop offset="1"    stop-color="#7A4F52"/>
+        </radialGradient>
+
+        <!-- BOTTLE RIM: thin darker outline that defines the bottle's edge against the
+             dark cabinet interior (the plastic wall thickness you see end-on). -->
+        <radialGradient id="bottleRim" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0.92" stop-color="#000" stop-opacity="0"/>
+          <stop offset="0.97" stop-color="#3D2020" stop-opacity="0.7"/>
+          <stop offset="1"    stop-color="#1A0A0A" stop-opacity="0.9"/>
+        </radialGradient>
+
+        <!-- DRIVE HEAD CENTER: the dark hub at the bottle's rotation axis (visible
+             through the back of the bottle — the black-rubber drive-head). -->
+        <radialGradient id="driveHead" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0"    stop-color="#1F1F1F"/>
+          <stop offset="0.7"  stop-color="#0A0A0A"/>
+          <stop offset="1"    stop-color="#000"/>
+        </radialGradient>
+
+        <!-- SETTLED MEDIA / CELL LAYER: a subtle deeper-pink crescent at the bottom
+             of the bottle interior, suggesting the cell pellet that's settled by gravity. -->
+        <radialGradient id="cellTint" cx="0.5" cy="0.85" r="0.45">
+          <stop offset="0"    stop-color="#A03030" stop-opacity="0.45"/>
+          <stop offset="0.7"  stop-color="#A03030" stop-opacity="0.15"/>
+          <stop offset="1"    stop-color="#A03030" stop-opacity="0"/>
+        </radialGradient>
+
+        <!-- Specular glint on the upper rim (cabinet light catching the curved surface). -->
+        <radialGradient id="bottleGlint" cx="0.32" cy="0.22" r="0.35">
+          <stop offset="0"    stop-color="#FFFFFF" stop-opacity="0.7"/>
+          <stop offset="0.6"  stop-color="#FFFFFF" stop-opacity="0.2"/>
+          <stop offset="1"    stop-color="#FFFFFF" stop-opacity="0"/>
+        </radialGradient>
+
+        <!-- Clip path: every porthole's interior. Used so the rotating cell crescent
+             stays inside the circle (otherwise it sweeps out as it rotates). -->
+        <clipPath id="portholeClip">
+          <circle r="58"/>
+        </clipPath>
+
+        <!-- Same clip but for the larger Beat 4 portholes (radius 70). -->
+        <clipPath id="portholeClipBig">
+          <circle r="70"/>
+        </clipPath>
+
+        <!-- Cell crescent — the cell monolayer settled at the lowest point.
+             Rendered larger now (radius ~50, sitting at the bottom of a -60..60 viewBox)
+             so it actually reads through the small porthole. As the .crescent rotates,
+             this arc sweeps around the inner wall of the bottle, simulating the
+             rolling cell layer. -->
+        <symbol id="cellCrescent" viewBox="-60 -60 120 120">
+          <!-- Outer cell layer: thicker arc hugging the bottom inner wall -->
+          <path d="M -50 18
+                   A 53 53 0 0 0 50 18
+                   Q 38 48 0 50
+                   Q -38 48 -50 18 Z"
+                fill="#E5A0A0" opacity="0.5"/>
+          <!-- Denser inner pellet near the very bottom -->
+          <path d="M -34 32
+                   A 36 36 0 0 0 34 32
+                   Q 24 50 0 51
+                   Q -24 50 -34 32 Z"
+                fill="#B91C1C" opacity="0.7"/>
+        </symbol>
+
+        <!-- Vision overlay grid -->
+        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(168, 85, 247, 0.18)" stroke-width="0.5"/>
+        </pattern>
+
+        <!-- Glow filters -->
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="4" result="b"/>
+          <feMerge>
+            <feMergeNode in="b"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+
+        <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2"/>
+        </filter>
+
+        <!-- Mask: clip cell area to circle. r=200 leaves room for HUD chrome at the sides. -->
+        <clipPath id="cellCircle">
+          <circle cx="800" cy="450" r="200"/>
+        </clipPath>
+
+        <!-- Bottle reusable symbol.
+             ViewBox is -100..100 wide, -30..30 tall (200×60).
+             Surface "rolling" effect is achieved by a moving highlight stripe
+             that slides vertically across the bottle interior (clip-path: stripe).
+             The bottle itself never moves — only the surface texture moves,
+             which is the correct 2D representation of rotisserie rotation. -->
+        <symbol id="bottle" viewBox="-100 -30 200 60">
+          <!-- bottle body (clear plastic, slight purple tint to suggest media) -->
+          <rect x="-80" y="-22" width="160" height="44" rx="4" fill="url(#bottleGradient)" stroke="#E5E7EB" stroke-width="0.5" stroke-opacity="0.6"/>
+          <!-- contents tint -->
+          <rect x="-78" y="-20" width="156" height="40" rx="3" fill="rgba(168, 92, 246, 0.06)"/>
+
+          <!-- Rolling-surface highlight stripes, clipped to bottle interior.
+               Use a clipPath inline so they don't escape the bottle outline. -->
+          <defs>
+            <clipPath id="bottleInterior">
+              <rect x="-78" y="-20" width="156" height="40" rx="3"/>
+            </clipPath>
+          </defs>
+          <g clip-path="url(#bottleInterior)">
+            <!-- Light stripe (specular) -->
+            <rect class="roll-stripe-light" x="-78" y="-22" width="156" height="3"
+                  fill="rgba(255,255,255,0.55)"/>
+            <!-- Dark stripe (shadow side) -->
+            <rect class="roll-stripe-dark"  x="-78" y="-22" width="156" height="3"
+                  fill="rgba(0,0,0,0.35)"/>
+          </g>
+
+          <!-- Static specular line at top (always-on rim highlight) -->
+          <rect x="-78" y="-21" width="156" height="1" fill="rgba(255,255,255,0.5)" opacity="0.7"/>
+          <!-- Static shadow line at bottom (always-on rim shadow) -->
+          <rect x="-78" y="20"  width="156" height="1" fill="rgba(0,0,0,0.35)"/>
+
+          <!-- end caps (black rotational drive heads, like the mockup) -->
+          <ellipse cx="-80" cy="0" rx="6" ry="22" fill="url(#bottleEnd)"/>
+          <ellipse cx="80"  cy="0" rx="6" ry="22" fill="url(#bottleEnd)"/>
+          <!-- inner cap detail -->
+          <circle cx="-80" cy="0" r="4" fill="#0a0a0a"/>
+          <circle cx="80"  cy="0" r="4" fill="#0a0a0a"/>
+        </symbol>
+      </defs>
+
+      <!-- ============ BEAT 1 — WIDE SHOT ============ -->
+      <g class="scene-wide">
+
+        <!-- Cabinet (right side). 440 wide accommodates the round end-on portholes. -->
+        <g transform="translate(900, 150)">
+          <!-- Cabinet shadow -->
+          <ellipse cx="220" cy="610" rx="240" ry="14" fill="black" opacity="0.4"/>
+
+          <!-- Cabinet back panel -->
+          <rect x="20" y="20" width="440" height="580" rx="6" fill="url(#steelFront)"/>
+          <!-- Cabinet top -->
+          <path d="M 20 20 L 460 20 L 470 10 L 30 10 Z" fill="url(#steelTop)"/>
+          <!-- Glass door frame -->
+          <rect x="40" y="40" width="400" height="540" rx="3" fill="#1F2937" stroke="#9CA3AF" stroke-width="2"/>
+          <!-- Glass door -->
+          <rect x="44" y="44" width="392" height="532" rx="2" fill="url(#glassGradient)"/>
+
+          <!-- Interior light strip -->
+          <rect x="60" y="50" width="360" height="3" fill="#F9FAFB" opacity="0.7"/>
+          <rect x="60" y="50" width="360" height="3" fill="#A855F7" opacity="0.4" filter="url(#softGlow)"/>
+
+          <!-- Status LEDs -->
+          <circle class="led" cx="60" cy="595" r="3" fill="#4ADE80"/>
+          <circle class="led led-2" cx="75" cy="595" r="3" fill="#A855F7"/>
+          <circle class="led led-3" cx="90" cy="595" r="3" fill="#A855F7"/>
+
+          <!-- 3×3 porthole grid: nine bottles pointing INTO the cabinet, so the viewer
+               sees their circular end-caps. Each porthole has glass + media + a slowly
+               rotating cell crescent (which is the visual proof the bottle is rolling).
+               Phase offsets desync the crescents so they don't all rotate in lockstep. -->
+
+          <!-- Helper math:
+               Cabinet glass is 392px wide (x=44 to x=436), 532px tall (y=44 to y=576).
+               Usable interior (inset 24px from glass): 344 wide, 484 tall, starting at (68, 68).
+               3×3 grid with 60px porthole radius: centres at x=128/240/352, y=148/318/488. -->
+
+          <!-- 3×3 grid of physical roller bottles, end-on view (we see the round
+               cross-section through the cabinet door). Each bottle: drop shadow + solid
+               sphere-shaded body + dark drive head at center + cell tint + rim. -->
+          <!-- Row 1 -->
+          <g transform="translate(128, 148)">
+            <ellipse cx="2" cy="63" rx="56" ry="6" fill="#000" opacity="0.35"/>
+            <circle r="58" fill="url(#bottleBody)"/>
+            <circle r="58" fill="url(#cellTint)"/>
+            <circle r="18" fill="url(#driveHead)"/>
+            <circle r="3" fill="#2A2A2A"/>
+            <circle r="58" fill="url(#bottleGlint)"/>
+            <circle r="58" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:0s">
+              <circle cx="50" cy="0" r="2.5" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+          </g>
+          <g transform="translate(240, 148)">
+            <ellipse cx="2" cy="63" rx="56" ry="6" fill="#000" opacity="0.35"/>
+            <circle r="58" fill="url(#bottleBody)"/>
+            <circle r="58" fill="url(#cellTint)"/>
+            <circle r="18" fill="url(#driveHead)"/>
+            <circle r="3" fill="#2A2A2A"/>
+            <circle r="58" fill="url(#bottleGlint)"/>
+            <circle r="58" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-1.5s">
+              <circle cx="50" cy="0" r="2.5" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+          </g>
+          <g transform="translate(352, 148)">
+            <ellipse cx="2" cy="63" rx="56" ry="6" fill="#000" opacity="0.35"/>
+            <circle r="58" fill="url(#bottleBody)"/>
+            <circle r="58" fill="url(#cellTint)"/>
+            <circle r="18" fill="url(#driveHead)"/>
+            <circle r="3" fill="#2A2A2A"/>
+            <circle r="58" fill="url(#bottleGlint)"/>
+            <circle r="58" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-3s">
+              <circle cx="50" cy="0" r="2.5" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+          </g>
+          <line x1="60" y1="225" x2="420" y2="225" stroke="#4B5563" stroke-width="1.5" opacity="0.5"/>
+          <!-- Row 2 -->
+          <g transform="translate(128, 318)">
+            <ellipse cx="2" cy="63" rx="56" ry="6" fill="#000" opacity="0.35"/>
+            <circle r="58" fill="url(#bottleBody)"/>
+            <circle r="58" fill="url(#cellTint)"/>
+            <circle r="18" fill="url(#driveHead)"/>
+            <circle r="3" fill="#2A2A2A"/>
+            <circle r="58" fill="url(#bottleGlint)"/>
+            <circle r="58" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-0.7s">
+              <circle cx="50" cy="0" r="2.5" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+          </g>
+          <g transform="translate(240, 318)">
+            <ellipse cx="2" cy="63" rx="56" ry="6" fill="#000" opacity="0.35"/>
+            <circle r="58" fill="url(#bottleBody)"/>
+            <circle r="58" fill="url(#cellTint)"/>
+            <circle r="18" fill="url(#driveHead)"/>
+            <circle r="3" fill="#2A2A2A"/>
+            <circle r="58" fill="url(#bottleGlint)"/>
+            <circle r="58" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-2.2s">
+              <circle cx="50" cy="0" r="2.5" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+          </g>
+          <g transform="translate(352, 318)">
+            <ellipse cx="2" cy="63" rx="56" ry="6" fill="#000" opacity="0.35"/>
+            <circle r="58" fill="url(#bottleBody)"/>
+            <circle r="58" fill="url(#cellTint)"/>
+            <circle r="18" fill="url(#driveHead)"/>
+            <circle r="3" fill="#2A2A2A"/>
+            <circle r="58" fill="url(#bottleGlint)"/>
+            <circle r="58" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-4.1s">
+              <circle cx="50" cy="0" r="2.5" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+          </g>
+          <line x1="60" y1="395" x2="420" y2="395" stroke="#4B5563" stroke-width="1.5" opacity="0.5"/>
+          <!-- Row 3 -->
+          <g transform="translate(128, 488)">
+            <ellipse cx="2" cy="63" rx="56" ry="6" fill="#000" opacity="0.35"/>
+            <circle r="58" fill="url(#bottleBody)"/>
+            <circle r="58" fill="url(#cellTint)"/>
+            <circle r="18" fill="url(#driveHead)"/>
+            <circle r="3" fill="#2A2A2A"/>
+            <circle r="58" fill="url(#bottleGlint)"/>
+            <circle r="58" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-5.3s">
+              <circle cx="50" cy="0" r="2.5" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+          </g>
+          <g transform="translate(240, 488)">
+            <ellipse cx="2" cy="63" rx="56" ry="6" fill="#000" opacity="0.35"/>
+            <circle r="58" fill="url(#bottleBody)"/>
+            <circle r="58" fill="url(#cellTint)"/>
+            <circle r="18" fill="url(#driveHead)"/>
+            <circle r="3" fill="#2A2A2A"/>
+            <circle r="58" fill="url(#bottleGlint)"/>
+            <circle r="58" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-6.8s">
+              <circle cx="50" cy="0" r="2.5" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+          </g>
+          <g transform="translate(352, 488)">
+            <ellipse cx="2" cy="63" rx="56" ry="6" fill="#000" opacity="0.35"/>
+            <circle r="58" fill="url(#bottleBody)"/>
+            <circle r="58" fill="url(#cellTint)"/>
+            <circle r="18" fill="url(#driveHead)"/>
+            <circle r="3" fill="#2A2A2A"/>
+            <circle r="58" fill="url(#bottleGlint)"/>
+            <circle r="58" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-8.1s">
+              <circle cx="50" cy="0" r="2.5" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+          </g>
+          <line x1="60" y1="490" x2="420" y2="490" stroke="#4B5563" stroke-width="1.5" opacity="0.5"/>
+          <!-- Feet -->
+          <rect x="60" y="600" width="20" height="14" rx="2" fill="#4B5563"/>
+          <rect x="400" y="600" width="20" height="14" rx="2" fill="#4B5563"/>
+        </g>
+
+        <!-- Operator console (left of cabinet) -->
+        <g transform="translate(380, 380)">
+          <ellipse cx="180" cy="400" rx="200" ry="10" fill="black" opacity="0.4"/>
+          <!-- Console body -->
+          <path d="M 50 20 L 360 20 L 370 30 L 370 380 L 30 380 L 30 60 Z" fill="url(#steelFront)"/>
+          <!-- Top bevel -->
+          <path d="M 50 20 L 360 20 L 370 30 L 60 30 Z" fill="#9CA3AF"/>
+
+          <!-- BODHI plaque -->
+          <text x="200" y="80" text-anchor="middle" font-family="Inter" font-size="32" font-weight="500" fill="#1F2937" letter-spacing="3">BODHI</text>
+          <text x="200" y="100" text-anchor="middle" font-family="Inter" font-size="9" font-weight="400" fill="#374151" letter-spacing="2">AI-DRIVEN AUTOMATED ROLLER BOTTLE SYSTEM</text>
+
+          <!-- Touchscreen -->
+          <rect x="60" y="130" width="280" height="220" rx="4" fill="#0A0420" stroke="#374151" stroke-width="1"/>
+          <rect x="60" y="130" width="280" height="220" rx="4" fill="url(#screenGlow)"/>
+
+          <!-- Screen header -->
+          <text x="200" y="160" text-anchor="middle" class="hud-text" font-size="14" letter-spacing="2">AAV PRODUCTION</text>
+
+          <!-- Screen central element: rotating crosshair -->
+          <g transform="translate(200, 230)">
+            <circle r="50" fill="none" stroke="#A855F7" stroke-width="0.5" opacity="0.4"/>
+            <circle r="36" fill="none" stroke="#A855F7" stroke-width="0.5" opacity="0.6"/>
+            <circle r="22" fill="#6D28D9" opacity="0.3"/>
+            <circle r="14" fill="#A855F7" opacity="0.5"/>
+            <g style="transform-origin: center; animation: roll 12s linear infinite;">
+              <line x1="-50" y1="0" x2="-36" y2="0" stroke="#C084FC" stroke-width="1"/>
+              <line x1="50" y1="0" x2="36" y2="0" stroke="#C084FC" stroke-width="1"/>
+              <line x1="0" y1="-50" x2="0" y2="-36" stroke="#C084FC" stroke-width="1"/>
+              <line x1="0" y1="50" x2="0" y2="36" stroke="#C084FC" stroke-width="1"/>
+            </g>
+          </g>
+
+          <!-- Buttons -->
+          <g font-family="Inter" font-size="9" font-weight="500" fill="#C084FC" text-anchor="middle">
+            <rect x="80" y="305" width="80" height="22" rx="3" fill="none" stroke="#A855F7" stroke-width="0.5"/>
+            <text x="120" y="320">STATUS</text>
+            <rect x="170" y="305" width="80" height="22" rx="3" fill="none" stroke="#A855F7" stroke-width="0.5"/>
+            <text x="210" y="320">BATCH</text>
+            <rect x="260" y="305" width="70" height="22" rx="3" fill="none" stroke="#A855F7" stroke-width="0.5"/>
+            <text x="295" y="320">HISTORY</text>
+          </g>
+
+          <!-- Feet -->
+          <rect x="40" y="380" width="20" height="14" rx="2" fill="#4B5563"/>
+          <rect x="340" y="380" width="20" height="14" rx="2" fill="#4B5563"/>
+        </g>
+
+        <!-- Floating data badges around the unit -->
+        <g font-family="JetBrains Mono" font-size="11" fill="#C084FC" opacity="0.85">
+          <g transform="translate(80, 280)">
+            <line x1="0" y1="20" x2="280" y2="20" class="connector"/>
+            <text class="hud-label" x="0" y="0">SYSTEM STATUS</text>
+            <text class="hud-value" x="0" y="16" font-size="14">9 / 9 BOTTLES ACTIVE</text>
+          </g>
+          <g transform="translate(80, 410)">
+            <line x1="0" y1="20" x2="220" y2="20" class="connector"/>
+            <text class="hud-label" x="0" y="0">CAMPAIGN</text>
+            <text class="hud-value" x="0" y="16" font-size="14">AAV9 · BATCH 0042</text>
+          </g>
+          <g transform="translate(80, 540)">
+            <line x1="0" y1="20" x2="280" y2="20" class="connector"/>
+            <text class="hud-label" x="0" y="0">PROJECTED YIELD</text>
+            <text class="hud-value" x="0" y="16" font-size="14">1.2 × 10¹³ vg / mL</text>
+          </g>
+        </g>
+      </g>
+
+      <!-- ============ BEAT 2 — CELL ZOOM ============ -->
+      <!-- Camera is "inside" a single roller bottle, looking at the adherent monolayer
+           on the inside wall. r=200 cell circle keeps everything centred and leaves
+           gutter room for HUD readouts at left and right. -->
+      <g class="scene-zoom">
+        <!-- Backdrop circle (slightly larger than cell area, gives a vignette feel) -->
+        <circle cx="800" cy="450" r="240" fill="url(#cellBackdrop)"/>
+        <circle cx="800" cy="450" r="220" fill="none" stroke="#A855F7" stroke-width="0.5" opacity="0.4"/>
+        <circle cx="800" cy="450" r="200" fill="none" stroke="#A855F7" stroke-width="0.3" opacity="0.6"/>
+
+        <!-- Bottle context arcs — top and bottom curves hint we're inside a cylinder -->
+        <path d="M 600 450 A 200 200 0 0 1 1000 450" fill="none" stroke="rgba(229, 231, 235, 0.3)" stroke-width="2"/>
+        <path d="M 600 450 A 200 200 0 0 0 1000 450" fill="none" stroke="rgba(229, 231, 235, 0.3)" stroke-width="2"/>
+
+        <!-- Adherent cells — clipped to the small circle -->
+        <g clip-path="url(#cellCircle)">
+          <!-- Dense adherent monolayer (~95% confluence). 302 generated cells. -->
+          <g opacity="0.78">
+            <ellipse class="cell" cx="800" cy="397" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="988" cy="419" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="767" cy="273" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="843" cy="291" rx="15" ry="11" fill="#65A30D"/>
+            <ellipse class="cell" cx="771" cy="480" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="966" cy="349" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="933" cy="323" rx="16" ry="12" fill="#22C55E"/>
+            <ellipse class="cell" cx="750" cy="366" rx="13" ry="9" fill="#65A30D"/>
+            <ellipse class="cell" cx="925" cy="404" rx="17" ry="12" fill="#22C55E"/>
+            <ellipse class="cell" cx="703" cy="308" rx="14" ry="10" fill="#65A30D"/>
+            <ellipse class="cell" cx="763" cy="577" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="900" cy="578" rx="13" ry="8" fill="#4ADE80"/>
+            <ellipse class="cell" cx="650" cy="420" rx="13" ry="10" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="749" cy="595" rx="14" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="897" cy="535" rx="13" ry="8" fill="#4ADE80"/>
+            <ellipse class="cell" cx="699" cy="497" rx="14" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="944" cy="347" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="864" cy="518" rx="16" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="720" cy="492" rx="16" ry="12" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="684" cy="327" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="875" cy="534" rx="15" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="810" cy="532" rx="15" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="746" cy="424" rx="14" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="629" cy="388" rx="15" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="789" cy="304" rx="16" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="621" cy="400" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="685" cy="402" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="971" cy="512" rx="17" ry="13" fill="#86EFAC"/>
+            <ellipse class="cell" cx="914" cy="302" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="749" cy="549" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="745" cy="533" rx="16" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="885" cy="477" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="850" cy="307" rx="14" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="610" cy="420" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="771" cy="634" rx="15" ry="11" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="637" cy="417" rx="15" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="627" cy="549" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="684" cy="363" rx="13" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="679" cy="534" rx="14" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="836" cy="350" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="881" cy="520" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="786" cy="423" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="634" cy="540" rx="14" ry="11" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="913" cy="330" rx="16" ry="11" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="619" cy="516" rx="15" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="870" cy="496" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="723" cy="616" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="790" cy="461" rx="13" ry="9" fill="#86EFAC"/>
+            <ellipse class="cell" cx="790" cy="499" rx="13" ry="8" fill="#4ADE80"/>
+            <ellipse class="cell" cx="640" cy="512" rx="15" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="968" cy="386" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="658" cy="568" rx="14" ry="10" fill="#65A30D"/>
+            <ellipse class="cell" cx="796" cy="360" rx="14" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="828" cy="568" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="840" cy="633" rx="15" ry="12" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="812" cy="307" rx="14" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="810" cy="502" rx="16" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="729" cy="559" rx="15" ry="10" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="688" cy="285" rx="16" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="690" cy="516" rx="13" ry="8" fill="#4ADE80"/>
+            <ellipse class="cell" cx="637" cy="495" rx="13" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="751" cy="323" rx="13" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="708" cy="551" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="675" cy="570" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="827" cy="502" rx="14" ry="9" fill="#86EFAC"/>
+            <ellipse class="cell" cx="707" cy="482" rx="14" ry="10" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="850" cy="347" rx="14" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="858" cy="578" rx="13" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="649" cy="404" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="824" cy="285" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="737" cy="398" rx="17" ry="13" fill="#86EFAC"/>
+            <ellipse class="cell" cx="706" cy="363" rx="13" ry="10" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="736" cy="514" rx="15" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="832" cy="266" rx="15" ry="11" fill="#65A30D"/>
+            <ellipse class="cell" cx="631" cy="458" rx="14" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="810" cy="459" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="814" cy="344" rx="13" ry="9" fill="#65A30D"/>
+            <ellipse class="cell" cx="747" cy="267" rx="15" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="825" cy="322" rx="16" ry="12" fill="#22C55E"/>
+            <ellipse class="cell" cx="610" cy="495" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="900" cy="387" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="970" cy="483" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="778" cy="331" rx="14" ry="9" fill="#86EFAC"/>
+            <ellipse class="cell" cx="671" cy="326" rx="17" ry="14" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="706" cy="592" rx="15" ry="12" fill="#22C55E"/>
+            <ellipse class="cell" cx="798" cy="323" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="867" cy="292" rx="17" ry="14" fill="#22C55E"/>
+            <ellipse class="cell" cx="636" cy="340" rx="15" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="988" cy="494" rx="17" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="720" cy="381" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="764" cy="493" rx="14" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="642" cy="474" rx="15" ry="10" fill="#65A30D"/>
+            <ellipse class="cell" cx="784" cy="267" rx="13" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="828" cy="610" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="700" cy="424" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="883" cy="557" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="869" cy="588" rx="15" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="916" cy="610" rx="16" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="877" cy="342" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="730" cy="437" rx="14" ry="11" fill="#65A30D"/>
+            <ellipse class="cell" cx="957" cy="445" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="749" cy="517" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="795" cy="594" rx="16" ry="12" fill="#65A30D"/>
+            <ellipse class="cell" cx="642" cy="441" rx="15" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="761" cy="456" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="935" cy="439" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="787" cy="609" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="855" cy="380" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="989" cy="459" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="654" cy="378" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="891" cy="291" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="992" cy="400" rx="17" ry="14" fill="#65A30D"/>
+            <ellipse class="cell" cx="651" cy="348" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="726" cy="578" rx="16" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="906" cy="443" rx="14" ry="11" fill="#65A30D"/>
+            <ellipse class="cell" cx="929" cy="591" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="707" cy="397" rx="15" ry="12" fill="#22C55E"/>
+            <ellipse class="cell" cx="763" cy="611" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="773" cy="438" rx="16" ry="13" fill="#86EFAC"/>
+            <ellipse class="cell" cx="671" cy="401" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="950" cy="364" rx="14" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="919" cy="345" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="759" cy="627" rx="15" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="823" cy="404" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="730" cy="588" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="928" cy="475" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="837" cy="254" rx="13" ry="9" fill="#86EFAC"/>
+            <ellipse class="cell" cx="830" cy="312" rx="13" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="973" cy="549" rx="15" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="622" cy="437" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="753" cy="285" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="979" cy="441" rx="15" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="753" cy="405" rx="15" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="708" cy="287" rx="14" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="725" cy="307" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="621" cy="477" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="644" cy="553" rx="13" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="679" cy="378" rx="15" ry="11" fill="#65A30D"/>
+            <ellipse class="cell" cx="672" cy="341" rx="16" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="892" cy="497" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="699" cy="539" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="996" cy="441" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="741" cy="348" rx="15" ry="11" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="834" cy="380" rx="17" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="898" cy="609" rx="16" ry="12" fill="#22C55E"/>
+            <ellipse class="cell" cx="777" cy="363" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="871" cy="577" rx="15" ry="11" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="763" cy="381" rx="16" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="772" cy="405" rx="14" ry="10" fill="#65A30D"/>
+            <ellipse class="cell" cx="912" cy="518" rx="14" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="878" cy="388" rx="15" ry="11" fill="#65A30D"/>
+            <ellipse class="cell" cx="654" cy="458" rx="13" ry="8" fill="#86EFAC"/>
+            <ellipse class="cell" cx="889" cy="367" rx="14" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="776" cy="293" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="849" cy="462" rx="14" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="816" cy="625" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="891" cy="405" rx="15" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="701" cy="610" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="949" cy="403" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="840" cy="363" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="762" cy="346" rx="13" ry="8" fill="#22C55E"/>
+            <ellipse class="cell" cx="821" cy="436" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="665" cy="435" rx="14" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="876" cy="613" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="808" cy="382" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="942" cy="385" rx="16" ry="13" fill="#86EFAC"/>
+            <ellipse class="cell" cx="945" cy="540" rx="15" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="783" cy="380" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="642" cy="328" rx="16" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="826" cy="455" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="700" cy="573" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="923" cy="530" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="879" cy="269" rx="15" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="801" cy="521" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="836" cy="420" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="780" cy="556" rx="16" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="967" cy="419" rx="13" ry="8" fill="#4ADE80"/>
+            <ellipse class="cell" cx="762" cy="303" rx="17" ry="13" fill="#86EFAC"/>
+            <ellipse class="cell" cx="744" cy="379" rx="15" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="755" cy="475" rx="14" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="734" cy="284" rx="14" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="931" cy="556" rx="13" ry="8" fill="#4ADE80"/>
+            <ellipse class="cell" cx="960" cy="569" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="670" cy="595" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="946" cy="460" rx="13" ry="8" fill="#4ADE80"/>
+            <ellipse class="cell" cx="798" cy="625" rx="15" ry="10" fill="#65A30D"/>
+            <ellipse class="cell" cx="914" cy="380" rx="17" ry="13" fill="#65A30D"/>
+            <ellipse class="cell" cx="895" cy="459" rx="16" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="947" cy="328" rx="14" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="904" cy="290" rx="17" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="734" cy="478" rx="16" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="659" cy="531" rx="14" ry="10" fill="#65A30D"/>
+            <ellipse class="cell" cx="906" cy="404" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="791" cy="569" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="845" cy="559" rx="14" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="910" cy="360" rx="17" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="667" cy="477" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="714" cy="513" rx="17" ry="13" fill="#86EFAC"/>
+            <ellipse class="cell" cx="885" cy="440" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="844" cy="475" rx="14" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="824" cy="518" rx="16" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="702" cy="383" rx="14" ry="11" fill="#65A30D"/>
+            <ellipse class="cell" cx="840" cy="324" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="814" cy="607" rx="14" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="652" cy="499" rx="16" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="675" cy="461" rx="15" ry="12" fill="#65A30D"/>
+            <ellipse class="cell" cx="759" cy="442" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="948" cy="553" rx="14" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="899" cy="421" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="641" cy="365" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="742" cy="610" rx="17" ry="13" fill="#86EFAC"/>
+            <ellipse class="cell" cx="868" cy="483" rx="14" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="917" cy="571" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="804" cy="569" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="810" cy="421" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="795" cy="285" rx="14" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="763" cy="535" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="961" cy="532" rx="15" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="766" cy="423" rx="16" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="707" cy="327" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="772" cy="513" rx="14" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="898" cy="348" rx="15" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="946" cy="569" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="728" cy="368" rx="14" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="895" cy="305" rx="16" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="846" cy="438" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="771" cy="587" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="725" cy="534" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="680" cy="608" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="974" cy="397" rx="15" ry="11" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="791" cy="648" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="682" cy="492" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="677" cy="311" rx="13" ry="10" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="690" cy="444" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="783" cy="350" rx="14" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="746" cy="568" rx="13" ry="8" fill="#65A30D"/>
+            <ellipse class="cell" cx="872" cy="417" rx="14" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="695" cy="347" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="933" cy="365" rx="16" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="841" cy="520" rx="14" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="874" cy="460" rx="13" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="942" cy="493" rx="13" ry="8" fill="#22C55E"/>
+            <ellipse class="cell" cx="797" cy="437" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="903" cy="556" rx="17" ry="14" fill="#4ADE80"/>
+            <ellipse class="cell" cx="826" cy="540" rx="15" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="690" cy="475" rx="13" ry="9" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="745" cy="309" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="920" cy="495" rx="13" ry="8" fill="#65A30D"/>
+            <ellipse class="cell" cx="823" cy="591" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="683" cy="593" rx="13" ry="8" fill="#22C55E"/>
+            <ellipse class="cell" cx="788" cy="532" rx="17" ry="13" fill="#86EFAC"/>
+            <ellipse class="cell" cx="740" cy="460" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="867" cy="324" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="737" cy="626" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="963" cy="499" rx="14" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="664" cy="515" rx="14" ry="11" fill="#65A30D"/>
+            <ellipse class="cell" cx="840" cy="398" rx="16" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="840" cy="590" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="818" cy="474" rx="15" ry="10" fill="#65A30D"/>
+            <ellipse class="cell" cx="857" cy="531" rx="15" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="851" cy="607" rx="17" ry="14" fill="#4ADE80"/>
+            <ellipse class="cell" cx="722" cy="416" rx="17" ry="12" fill="#65A30D"/>
+            <ellipse class="cell" cx="859" cy="363" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="723" cy="348" rx="16" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="917" cy="419" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="866" cy="633" rx="14" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="733" cy="328" rx="15" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="867" cy="401" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="809" cy="271" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="854" cy="264" rx="17" ry="14" fill="#86EFAC"/>
+            <ellipse class="cell" cx="799" cy="474" rx="13" ry="9" fill="#86EFAC"/>
+            <ellipse class="cell" cx="818" cy="363" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="959" cy="454" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="886" cy="588" rx="15" ry="10" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="879" cy="305" rx="14" ry="9" fill="#86EFAC"/>
+            <ellipse class="cell" cx="854" cy="496" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="725" cy="456" rx="15" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="974" cy="359" rx="14" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="998" cy="476" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="887" cy="323" rx="13" ry="9" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="954" cy="519" rx="16" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="867" cy="558" rx="17" ry="12" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="793" cy="549" rx="13" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="919" cy="461" rx="13" ry="8" fill="#4ADE80"/>
+            <ellipse class="cell" cx="696" cy="460" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="856" cy="426" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="953" cy="477" rx="14" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="868" cy="435" rx="13" ry="9" fill="#65A30D"/>
+            <ellipse class="cell" cx="719" cy="269" rx="13" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="818" cy="551" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="980" cy="385" rx="13" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="926" cy="513" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="937" cy="421" rx="14" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="743" cy="498" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="713" cy="442" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="676" cy="426" rx="14" ry="10" fill="#65A30D"/>
+            <ellipse class="cell" cx="907" cy="476" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="692" cy="556" rx="14" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="669" cy="367" rx="16" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="904" cy="593" rx="17" ry="14" fill="#4ADE80"/>
+            <ellipse class="cell" cx="610" cy="462" rx="13" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="667" cy="558" rx="15" ry="11" fill="#4ADE80"/>
+          </g>
+          <g fill="#15803d" opacity="0.85">
+            <circle cx="800" cy="397" r="3.5"/>
+            <circle cx="990" cy="420" r="3.5"/>
+            <circle cx="768" cy="272" r="3.5"/>
+            <circle cx="842" cy="289" r="3.5"/>
+            <circle cx="771" cy="479" r="3.5"/>
+            <circle cx="967" cy="350" r="3.5"/>
+            <circle cx="934" cy="324" r="3.5"/>
+            <circle cx="750" cy="368" r="3.5"/>
+            <circle cx="925" cy="404" r="3.5"/>
+            <circle cx="703" cy="306" r="3.5"/>
+            <circle cx="765" cy="579" r="3.5"/>
+            <circle cx="900" cy="580" r="3.5"/>
+            <circle cx="648" cy="419" r="3.5"/>
+            <circle cx="751" cy="595" r="3.5"/>
+            <circle cx="899" cy="536" r="3.5"/>
+            <circle cx="698" cy="498" r="3.5"/>
+            <circle cx="945" cy="348" r="3.5"/>
+            <circle cx="866" cy="517" r="3.5"/>
+            <circle cx="721" cy="492" r="3.5"/>
+            <circle cx="682" cy="327" r="3.5"/>
+            <circle cx="875" cy="534" r="3.5"/>
+            <circle cx="811" cy="531" r="3.5"/>
+            <circle cx="748" cy="422" r="3.5"/>
+            <circle cx="629" cy="387" r="3.5"/>
+            <circle cx="791" cy="303" r="3.5"/>
+            <circle cx="621" cy="402" r="3.5"/>
+            <circle cx="686" cy="402" r="3.5"/>
+            <circle cx="973" cy="510" r="3.5"/>
+            <circle cx="916" cy="304" r="3.5"/>
+            <circle cx="750" cy="550" r="3.5"/>
+            <circle cx="744" cy="532" r="3.5"/>
+            <circle cx="885" cy="479" r="3.5"/>
+            <circle cx="848" cy="308" r="3.5"/>
+            <circle cx="611" cy="419" r="3.5"/>
+            <circle cx="771" cy="636" r="3.5"/>
+            <circle cx="635" cy="418" r="3.5"/>
+            <circle cx="628" cy="551" r="3.5"/>
+            <circle cx="682" cy="365" r="3.5"/>
+            <circle cx="679" cy="532" r="3.5"/>
+            <circle cx="835" cy="351" r="3.5"/>
+            <circle cx="883" cy="522" r="3.5"/>
+            <circle cx="786" cy="425" r="3.5"/>
+            <circle cx="634" cy="541" r="3.5"/>
+            <circle cx="915" cy="332" r="3.5"/>
+            <circle cx="618" cy="515" r="3.5"/>
+            <circle cx="869" cy="495" r="3.5"/>
+            <circle cx="721" cy="615" r="3.5"/>
+            <circle cx="790" cy="461" r="3.5"/>
+            <circle cx="792" cy="501" r="3.5"/>
+            <circle cx="640" cy="513" r="3.5"/>
+            <circle cx="970" cy="385" r="3.5"/>
+            <circle cx="657" cy="566" r="3.5"/>
+            <circle cx="797" cy="360" r="3.5"/>
+            <circle cx="826" cy="568" r="3.5"/>
+            <circle cx="841" cy="631" r="3.5"/>
+            <circle cx="811" cy="307" r="3.5"/>
+            <circle cx="812" cy="500" r="3.5"/>
+            <circle cx="729" cy="559" r="3.5"/>
+            <circle cx="690" cy="287" r="3.5"/>
+            <circle cx="688" cy="514" r="3.5"/>
+            <circle cx="635" cy="494" r="3.5"/>
+            <circle cx="753" cy="324" r="3.5"/>
+            <circle cx="710" cy="553" r="3.5"/>
+            <circle cx="674" cy="570" r="3.5"/>
+            <circle cx="827" cy="503" r="3.5"/>
+            <circle cx="705" cy="483" r="3.5"/>
+            <circle cx="852" cy="349" r="3.5"/>
+            <circle cx="857" cy="578" r="3.5"/>
+            <circle cx="647" cy="404" r="3.5"/>
+            <circle cx="823" cy="284" r="3.5"/>
+            <circle cx="738" cy="396" r="3.5"/>
+            <circle cx="704" cy="361" r="3.5"/>
+            <circle cx="734" cy="516" r="3.5"/>
+            <circle cx="832" cy="267" r="3.5"/>
+            <circle cx="632" cy="456" r="3.5"/>
+            <circle cx="812" cy="460" r="3.5"/>
+            <circle cx="812" cy="342" r="3.5"/>
+            <circle cx="747" cy="267" r="3.5"/>
+            <circle cx="827" cy="321" r="3.5"/>
+            <circle cx="608" cy="497" r="3.5"/>
+            <circle cx="901" cy="386" r="3.5"/>
+            <circle cx="971" cy="482" r="3.5"/>
+            <circle cx="778" cy="330" r="3.5"/>
+            <circle cx="670" cy="325" r="3.5"/>
+            <circle cx="704" cy="592" r="3.5"/>
+            <circle cx="798" cy="321" r="3.5"/>
+            <circle cx="869" cy="290" r="3.5"/>
+            <circle cx="634" cy="340" r="3.5"/>
+            <circle cx="990" cy="495" r="3.5"/>
+            <circle cx="718" cy="379" r="3.5"/>
+            <circle cx="763" cy="493" r="3.5"/>
+            <circle cx="640" cy="473" r="3.5"/>
+            <circle cx="784" cy="269" r="3.5"/>
+            <circle cx="830" cy="611" r="3.5"/>
+            <circle cx="698" cy="425" r="3.5"/>
+            <circle cx="883" cy="557" r="3.5"/>
+            <circle cx="869" cy="589" r="3.5"/>
+            <circle cx="914" cy="610" r="3.5"/>
+            <circle cx="878" cy="343" r="3.5"/>
+            <circle cx="729" cy="438" r="3.5"/>
+            <circle cx="956" cy="444" r="3.5"/>
+            <circle cx="747" cy="518" r="3.5"/>
+            <circle cx="794" cy="592" r="3.5"/>
+            <circle cx="641" cy="440" r="3.5"/>
+            <circle cx="759" cy="458" r="3.5"/>
+            <circle cx="935" cy="438" r="3.5"/>
+            <circle cx="788" cy="607" r="3.5"/>
+            <circle cx="856" cy="378" r="3.5"/>
+            <circle cx="987" cy="460" r="3.5"/>
+            <circle cx="654" cy="378" r="3.5"/>
+            <circle cx="890" cy="292" r="3.5"/>
+            <circle cx="990" cy="400" r="3.5"/>
+            <circle cx="650" cy="348" r="3.5"/>
+            <circle cx="725" cy="576" r="3.5"/>
+            <circle cx="905" cy="444" r="3.5"/>
+            <circle cx="931" cy="590" r="3.5"/>
+            <circle cx="708" cy="396" r="3.5"/>
+            <circle cx="763" cy="612" r="3.5"/>
+            <circle cx="774" cy="437" r="3.5"/>
+            <circle cx="670" cy="399" r="3.5"/>
+            <circle cx="950" cy="366" r="3.5"/>
+            <circle cx="919" cy="345" r="3.5"/>
+            <circle cx="758" cy="627" r="3.5"/>
+            <circle cx="824" cy="402" r="3.5"/>
+            <circle cx="730" cy="589" r="3.5"/>
+            <circle cx="929" cy="473" r="3.5"/>
+            <circle cx="836" cy="256" r="3.5"/>
+            <circle cx="828" cy="311" r="3.5"/>
+            <circle cx="975" cy="550" r="3.5"/>
+            <circle cx="622" cy="435" r="3.5"/>
+            <circle cx="753" cy="284" r="3.5"/>
+            <circle cx="979" cy="442" r="3.5"/>
+            <circle cx="753" cy="404" r="3.5"/>
+            <circle cx="707" cy="285" r="3.5"/>
+            <circle cx="726" cy="307" r="3.5"/>
+            <circle cx="622" cy="476" r="3.5"/>
+            <circle cx="642" cy="553" r="3.5"/>
+            <circle cx="678" cy="376" r="3.5"/>
+            <circle cx="673" cy="343" r="3.5"/>
+            <circle cx="892" cy="499" r="3.5"/>
+            <circle cx="698" cy="540" r="3.5"/>
+            <circle cx="994" cy="443" r="3.5"/>
+            <circle cx="741" cy="347" r="3.5"/>
+            <circle cx="834" cy="381" r="3.5"/>
+            <circle cx="896" cy="610" r="3.5"/>
+            <circle cx="776" cy="363" r="3.5"/>
+            <circle cx="873" cy="576" r="3.5"/>
+            <circle cx="762" cy="380" r="3.5"/>
+            <circle cx="774" cy="404" r="3.5"/>
+            <circle cx="911" cy="517" r="3.5"/>
+            <circle cx="880" cy="386" r="3.5"/>
+            <circle cx="652" cy="460" r="3.5"/>
+            <circle cx="890" cy="367" r="3.5"/>
+            <circle cx="775" cy="292" r="3.5"/>
+            <circle cx="848" cy="464" r="3.5"/>
+            <circle cx="815" cy="627" r="3.5"/>
+            <circle cx="891" cy="404" r="3.5"/>
+            <circle cx="699" cy="608" r="3.5"/>
+            <circle cx="951" cy="404" r="3.5"/>
+            <circle cx="838" cy="365" r="3.5"/>
+            <circle cx="762" cy="346" r="3.5"/>
+            <circle cx="821" cy="437" r="3.5"/>
+            <circle cx="663" cy="433" r="3.5"/>
+            <circle cx="877" cy="614" r="3.5"/>
+            <circle cx="807" cy="382" r="3.5"/>
+            <circle cx="941" cy="384" r="3.5"/>
+            <circle cx="947" cy="540" r="3.5"/>
+            <circle cx="781" cy="379" r="3.5"/>
+            <circle cx="642" cy="330" r="3.5"/>
+            <circle cx="828" cy="453" r="3.5"/>
+            <circle cx="700" cy="575" r="3.5"/>
+            <circle cx="924" cy="532" r="3.5"/>
+            <circle cx="877" cy="267" r="3.5"/>
+            <circle cx="801" cy="520" r="3.5"/>
+            <circle cx="836" cy="421" r="3.5"/>
+            <circle cx="782" cy="554" r="3.5"/>
+            <circle cx="967" cy="417" r="3.5"/>
+            <circle cx="763" cy="304" r="3.5"/>
+            <circle cx="746" cy="377" r="3.5"/>
+            <circle cx="757" cy="477" r="3.5"/>
+            <circle cx="733" cy="282" r="3.5"/>
+            <circle cx="930" cy="554" r="3.5"/>
+            <circle cx="959" cy="571" r="3.5"/>
+            <circle cx="669" cy="594" r="3.5"/>
+            <circle cx="944" cy="460" r="3.5"/>
+            <circle cx="798" cy="627" r="3.5"/>
+            <circle cx="912" cy="378" r="3.5"/>
+            <circle cx="893" cy="458" r="3.5"/>
+            <circle cx="947" cy="326" r="3.5"/>
+            <circle cx="906" cy="292" r="3.5"/>
+            <circle cx="735" cy="480" r="3.5"/>
+            <circle cx="658" cy="532" r="3.5"/>
+            <circle cx="904" cy="404" r="3.5"/>
+            <circle cx="789" cy="568" r="3.5"/>
+            <circle cx="843" cy="559" r="3.5"/>
+            <circle cx="908" cy="361" r="3.5"/>
+            <circle cx="668" cy="479" r="3.5"/>
+            <circle cx="716" cy="513" r="3.5"/>
+            <circle cx="883" cy="438" r="3.5"/>
+            <circle cx="842" cy="476" r="3.5"/>
+            <circle cx="823" cy="520" r="3.5"/>
+            <circle cx="704" cy="382" r="3.5"/>
+            <circle cx="839" cy="323" r="3.5"/>
+            <circle cx="816" cy="608" r="3.5"/>
+            <circle cx="653" cy="498" r="3.5"/>
+            <circle cx="673" cy="462" r="3.5"/>
+            <circle cx="760" cy="444" r="3.5"/>
+            <circle cx="950" cy="555" r="3.5"/>
+            <circle cx="897" cy="422" r="3.5"/>
+            <circle cx="639" cy="365" r="3.5"/>
+            <circle cx="742" cy="611" r="3.5"/>
+            <circle cx="867" cy="483" r="3.5"/>
+            <circle cx="918" cy="573" r="3.5"/>
+            <circle cx="804" cy="570" r="3.5"/>
+            <circle cx="812" cy="419" r="3.5"/>
+            <circle cx="795" cy="287" r="3.5"/>
+            <circle cx="762" cy="535" r="3.5"/>
+            <circle cx="960" cy="533" r="3.5"/>
+            <circle cx="764" cy="423" r="3.5"/>
+            <circle cx="705" cy="329" r="3.5"/>
+            <circle cx="771" cy="511" r="3.5"/>
+            <circle cx="898" cy="349" r="3.5"/>
+            <circle cx="945" cy="571" r="3.5"/>
+            <circle cx="726" cy="367" r="3.5"/>
+            <circle cx="894" cy="306" r="3.5"/>
+            <circle cx="847" cy="439" r="3.5"/>
+            <circle cx="769" cy="585" r="3.5"/>
+            <circle cx="723" cy="536" r="3.5"/>
+            <circle cx="680" cy="610" r="3.5"/>
+            <circle cx="974" cy="399" r="3.5"/>
+            <circle cx="789" cy="650" r="3.5"/>
+            <circle cx="680" cy="492" r="3.5"/>
+            <circle cx="675" cy="313" r="3.5"/>
+            <circle cx="688" cy="445" r="3.5"/>
+            <circle cx="782" cy="348" r="3.5"/>
+            <circle cx="746" cy="566" r="3.5"/>
+            <circle cx="872" cy="417" r="3.5"/>
+            <circle cx="694" cy="345" r="3.5"/>
+            <circle cx="931" cy="367" r="3.5"/>
+            <circle cx="843" cy="520" r="3.5"/>
+            <circle cx="872" cy="461" r="3.5"/>
+            <circle cx="944" cy="495" r="3.5"/>
+            <circle cx="796" cy="438" r="3.5"/>
+            <circle cx="901" cy="558" r="3.5"/>
+            <circle cx="825" cy="540" r="3.5"/>
+            <circle cx="691" cy="477" r="3.5"/>
+            <circle cx="745" cy="309" r="3.5"/>
+            <circle cx="919" cy="493" r="3.5"/>
+            <circle cx="825" cy="591" r="3.5"/>
+            <circle cx="684" cy="595" r="3.5"/>
+            <circle cx="790" cy="531" r="3.5"/>
+            <circle cx="741" cy="459" r="3.5"/>
+            <circle cx="869" cy="324" r="3.5"/>
+            <circle cx="738" cy="628" r="3.5"/>
+            <circle cx="963" cy="501" r="3.5"/>
+            <circle cx="665" cy="516" r="3.5"/>
+            <circle cx="840" cy="396" r="3.5"/>
+            <circle cx="839" cy="590" r="3.5"/>
+            <circle cx="817" cy="473" r="3.5"/>
+            <circle cx="859" cy="533" r="3.5"/>
+            <circle cx="852" cy="609" r="3.5"/>
+            <circle cx="723" cy="414" r="3.5"/>
+            <circle cx="859" cy="362" r="3.5"/>
+            <circle cx="722" cy="348" r="3.5"/>
+            <circle cx="919" cy="419" r="3.5"/>
+            <circle cx="867" cy="633" r="3.5"/>
+            <circle cx="733" cy="327" r="3.5"/>
+            <circle cx="867" cy="399" r="3.5"/>
+            <circle cx="807" cy="270" r="3.5"/>
+            <circle cx="856" cy="262" r="3.5"/>
+            <circle cx="801" cy="474" r="3.5"/>
+            <circle cx="819" cy="361" r="3.5"/>
+            <circle cx="961" cy="455" r="3.5"/>
+            <circle cx="887" cy="588" r="3.5"/>
+            <circle cx="877" cy="307" r="3.5"/>
+            <circle cx="853" cy="495" r="3.5"/>
+            <circle cx="726" cy="456" r="3.5"/>
+            <circle cx="974" cy="358" r="3.5"/>
+            <circle cx="997" cy="478" r="3.5"/>
+            <circle cx="889" cy="323" r="3.5"/>
+            <circle cx="956" cy="517" r="3.5"/>
+            <circle cx="868" cy="558" r="3.5"/>
+            <circle cx="792" cy="550" r="3.5"/>
+            <circle cx="917" cy="459" r="3.5"/>
+            <circle cx="697" cy="462" r="3.5"/>
+            <circle cx="858" cy="424" r="3.5"/>
+            <circle cx="954" cy="478" r="3.5"/>
+            <circle cx="870" cy="434" r="3.5"/>
+            <circle cx="720" cy="269" r="3.5"/>
+            <circle cx="820" cy="553" r="3.5"/>
+            <circle cx="978" cy="386" r="3.5"/>
+            <circle cx="927" cy="514" r="3.5"/>
+            <circle cx="937" cy="421" r="3.5"/>
+            <circle cx="743" cy="498" r="3.5"/>
+            <circle cx="714" cy="444" r="3.5"/>
+            <circle cx="678" cy="428" r="3.5"/>
+            <circle cx="908" cy="476" r="3.5"/>
+            <circle cx="690" cy="557" r="3.5"/>
+            <circle cx="670" cy="368" r="3.5"/>
+            <circle cx="904" cy="592" r="3.5"/>
+            <circle cx="612" cy="462" r="3.5"/>
+            <circle cx="666" cy="559" r="3.5"/>
+          </g>
+        </g>
+
+        <!-- Corner brackets sized to the smaller circle (200px radius → ~210px from centre) -->
+        <g stroke="#A855F7" stroke-width="1" fill="none">
+          <path d="M 590 240 L 590 270 L 620 270"/>
+          <path d="M 1010 240 L 1010 270 L 980 270"/>
+          <path d="M 590 660 L 590 630 L 620 630"/>
+          <path d="M 1010 660 L 1010 630 L 980 630"/>
+        </g>
+
+        <!-- LEFT GUTTER — vessel identification -->
+        <g font-family="JetBrains Mono">
+          <g transform="translate(220, 420)">
+            <text class="hud-label" x="0" y="0">VESSEL</text>
+            <text class="hud-value" x="0" y="22" font-size="20">B-5</text>
+            <text class="hud-label" x="0" y="44" font-size="9">ROW 2 · POSITION 2</text>
+          </g>
+        </g>
+
+        <!-- RIGHT GUTTER — magnification + sample state -->
+        <g font-family="JetBrains Mono">
+          <g transform="translate(1100, 380)">
+            <text class="hud-label" x="0" y="0">MAGNIFICATION</text>
+            <text class="hud-value" x="0" y="22" font-size="20">200×</text>
+          </g>
+          <g transform="translate(1100, 460)">
+            <text class="hud-label" x="0" y="0">CULTURE TIME</text>
+            <text class="hud-value" x="0" y="22" font-size="20">72h 14m</text>
+          </g>
+          <g transform="translate(1100, 540)">
+            <text class="hud-label" x="0" y="0">CELL LINE</text>
+            <text class="hud-value" x="0" y="22" font-size="20">HEK293T</text>
+          </g>
+        </g>
+      </g>
+
+      <!-- ============ BEAT 3 — AI VISION OVERLAY ============ -->
+      <!-- Same field as Beat 2, but the AI vision system has now ANALYSED it:
+           segmentation outlines, scan line, live ticking confluence/cell count/timestamp.
+           This is the slide-3 "real-time monitoring & alerts for batch correction" beat. -->
+      <g class="scene-vision">
+        <circle cx="800" cy="450" r="240" fill="url(#cellBackdrop)"/>
+
+        <g clip-path="url(#cellCircle)">
+          <!-- Faint analysis grid -->
+          <rect x="600" y="250" width="400" height="400" fill="url(#grid)"/>
+
+          <!-- Cells (dimmed — segmentation masks are the focus in this beat) -->
+          <g opacity="0.40">
+            <ellipse class="cell" cx="800" cy="397" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="988" cy="419" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="767" cy="273" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="843" cy="291" rx="15" ry="11" fill="#65A30D"/>
+            <ellipse class="cell" cx="771" cy="480" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="966" cy="349" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="933" cy="323" rx="16" ry="12" fill="#22C55E"/>
+            <ellipse class="cell" cx="750" cy="366" rx="13" ry="9" fill="#65A30D"/>
+            <ellipse class="cell" cx="925" cy="404" rx="17" ry="12" fill="#22C55E"/>
+            <ellipse class="cell" cx="703" cy="308" rx="14" ry="10" fill="#65A30D"/>
+            <ellipse class="cell" cx="763" cy="577" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="900" cy="578" rx="13" ry="8" fill="#4ADE80"/>
+            <ellipse class="cell" cx="650" cy="420" rx="13" ry="10" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="749" cy="595" rx="14" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="897" cy="535" rx="13" ry="8" fill="#4ADE80"/>
+            <ellipse class="cell" cx="699" cy="497" rx="14" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="944" cy="347" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="864" cy="518" rx="16" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="720" cy="492" rx="16" ry="12" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="684" cy="327" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="875" cy="534" rx="15" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="810" cy="532" rx="15" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="746" cy="424" rx="14" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="629" cy="388" rx="15" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="789" cy="304" rx="16" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="621" cy="400" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="685" cy="402" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="971" cy="512" rx="17" ry="13" fill="#86EFAC"/>
+            <ellipse class="cell" cx="914" cy="302" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="749" cy="549" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="745" cy="533" rx="16" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="885" cy="477" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="850" cy="307" rx="14" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="610" cy="420" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="771" cy="634" rx="15" ry="11" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="637" cy="417" rx="15" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="627" cy="549" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="684" cy="363" rx="13" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="679" cy="534" rx="14" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="836" cy="350" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="881" cy="520" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="786" cy="423" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="634" cy="540" rx="14" ry="11" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="913" cy="330" rx="16" ry="11" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="619" cy="516" rx="15" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="870" cy="496" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="723" cy="616" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="790" cy="461" rx="13" ry="9" fill="#86EFAC"/>
+            <ellipse class="cell" cx="790" cy="499" rx="13" ry="8" fill="#4ADE80"/>
+            <ellipse class="cell" cx="640" cy="512" rx="15" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="968" cy="386" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="658" cy="568" rx="14" ry="10" fill="#65A30D"/>
+            <ellipse class="cell" cx="796" cy="360" rx="14" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="828" cy="568" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="840" cy="633" rx="15" ry="12" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="812" cy="307" rx="14" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="810" cy="502" rx="16" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="729" cy="559" rx="15" ry="10" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="688" cy="285" rx="16" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="690" cy="516" rx="13" ry="8" fill="#4ADE80"/>
+            <ellipse class="cell" cx="637" cy="495" rx="13" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="751" cy="323" rx="13" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="708" cy="551" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="675" cy="570" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="827" cy="502" rx="14" ry="9" fill="#86EFAC"/>
+            <ellipse class="cell" cx="707" cy="482" rx="14" ry="10" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="850" cy="347" rx="14" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="858" cy="578" rx="13" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="649" cy="404" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="824" cy="285" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="737" cy="398" rx="17" ry="13" fill="#86EFAC"/>
+            <ellipse class="cell" cx="706" cy="363" rx="13" ry="10" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="736" cy="514" rx="15" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="832" cy="266" rx="15" ry="11" fill="#65A30D"/>
+            <ellipse class="cell" cx="631" cy="458" rx="14" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="810" cy="459" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="814" cy="344" rx="13" ry="9" fill="#65A30D"/>
+            <ellipse class="cell" cx="747" cy="267" rx="15" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="825" cy="322" rx="16" ry="12" fill="#22C55E"/>
+            <ellipse class="cell" cx="610" cy="495" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="900" cy="387" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="970" cy="483" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="778" cy="331" rx="14" ry="9" fill="#86EFAC"/>
+            <ellipse class="cell" cx="671" cy="326" rx="17" ry="14" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="706" cy="592" rx="15" ry="12" fill="#22C55E"/>
+            <ellipse class="cell" cx="798" cy="323" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="867" cy="292" rx="17" ry="14" fill="#22C55E"/>
+            <ellipse class="cell" cx="636" cy="340" rx="15" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="988" cy="494" rx="17" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="720" cy="381" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="764" cy="493" rx="14" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="642" cy="474" rx="15" ry="10" fill="#65A30D"/>
+            <ellipse class="cell" cx="784" cy="267" rx="13" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="828" cy="610" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="700" cy="424" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="883" cy="557" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="869" cy="588" rx="15" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="916" cy="610" rx="16" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="877" cy="342" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="730" cy="437" rx="14" ry="11" fill="#65A30D"/>
+            <ellipse class="cell" cx="957" cy="445" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="749" cy="517" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="795" cy="594" rx="16" ry="12" fill="#65A30D"/>
+            <ellipse class="cell" cx="642" cy="441" rx="15" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="761" cy="456" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="935" cy="439" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="787" cy="609" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="855" cy="380" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="989" cy="459" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="654" cy="378" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="891" cy="291" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="992" cy="400" rx="17" ry="14" fill="#65A30D"/>
+            <ellipse class="cell" cx="651" cy="348" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="726" cy="578" rx="16" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="906" cy="443" rx="14" ry="11" fill="#65A30D"/>
+            <ellipse class="cell" cx="929" cy="591" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="707" cy="397" rx="15" ry="12" fill="#22C55E"/>
+            <ellipse class="cell" cx="763" cy="611" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="773" cy="438" rx="16" ry="13" fill="#86EFAC"/>
+            <ellipse class="cell" cx="671" cy="401" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="950" cy="364" rx="14" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="919" cy="345" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="759" cy="627" rx="15" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="823" cy="404" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="730" cy="588" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="928" cy="475" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="837" cy="254" rx="13" ry="9" fill="#86EFAC"/>
+            <ellipse class="cell" cx="830" cy="312" rx="13" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="973" cy="549" rx="15" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="622" cy="437" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="753" cy="285" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="979" cy="441" rx="15" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="753" cy="405" rx="15" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="708" cy="287" rx="14" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="725" cy="307" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="621" cy="477" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="644" cy="553" rx="13" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="679" cy="378" rx="15" ry="11" fill="#65A30D"/>
+            <ellipse class="cell" cx="672" cy="341" rx="16" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="892" cy="497" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="699" cy="539" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="996" cy="441" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="741" cy="348" rx="15" ry="11" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="834" cy="380" rx="17" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="898" cy="609" rx="16" ry="12" fill="#22C55E"/>
+            <ellipse class="cell" cx="777" cy="363" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="871" cy="577" rx="15" ry="11" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="763" cy="381" rx="16" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="772" cy="405" rx="14" ry="10" fill="#65A30D"/>
+            <ellipse class="cell" cx="912" cy="518" rx="14" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="878" cy="388" rx="15" ry="11" fill="#65A30D"/>
+            <ellipse class="cell" cx="654" cy="458" rx="13" ry="8" fill="#86EFAC"/>
+            <ellipse class="cell" cx="889" cy="367" rx="14" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="776" cy="293" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="849" cy="462" rx="14" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="816" cy="625" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="891" cy="405" rx="15" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="701" cy="610" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="949" cy="403" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="840" cy="363" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="762" cy="346" rx="13" ry="8" fill="#22C55E"/>
+            <ellipse class="cell" cx="821" cy="436" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="665" cy="435" rx="14" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="876" cy="613" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="808" cy="382" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="942" cy="385" rx="16" ry="13" fill="#86EFAC"/>
+            <ellipse class="cell" cx="945" cy="540" rx="15" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="783" cy="380" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="642" cy="328" rx="16" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="826" cy="455" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="700" cy="573" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="923" cy="530" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="879" cy="269" rx="15" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="801" cy="521" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="836" cy="420" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="780" cy="556" rx="16" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="967" cy="419" rx="13" ry="8" fill="#4ADE80"/>
+            <ellipse class="cell" cx="762" cy="303" rx="17" ry="13" fill="#86EFAC"/>
+            <ellipse class="cell" cx="744" cy="379" rx="15" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="755" cy="475" rx="14" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="734" cy="284" rx="14" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="931" cy="556" rx="13" ry="8" fill="#4ADE80"/>
+            <ellipse class="cell" cx="960" cy="569" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="670" cy="595" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="946" cy="460" rx="13" ry="8" fill="#4ADE80"/>
+            <ellipse class="cell" cx="798" cy="625" rx="15" ry="10" fill="#65A30D"/>
+            <ellipse class="cell" cx="914" cy="380" rx="17" ry="13" fill="#65A30D"/>
+            <ellipse class="cell" cx="895" cy="459" rx="16" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="947" cy="328" rx="14" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="904" cy="290" rx="17" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="734" cy="478" rx="16" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="659" cy="531" rx="14" ry="10" fill="#65A30D"/>
+            <ellipse class="cell" cx="906" cy="404" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="791" cy="569" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="845" cy="559" rx="14" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="910" cy="360" rx="17" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="667" cy="477" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="714" cy="513" rx="17" ry="13" fill="#86EFAC"/>
+            <ellipse class="cell" cx="885" cy="440" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="844" cy="475" rx="14" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="824" cy="518" rx="16" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="702" cy="383" rx="14" ry="11" fill="#65A30D"/>
+            <ellipse class="cell" cx="840" cy="324" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="814" cy="607" rx="14" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="652" cy="499" rx="16" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="675" cy="461" rx="15" ry="12" fill="#65A30D"/>
+            <ellipse class="cell" cx="759" cy="442" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="948" cy="553" rx="14" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="899" cy="421" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="641" cy="365" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="742" cy="610" rx="17" ry="13" fill="#86EFAC"/>
+            <ellipse class="cell" cx="868" cy="483" rx="14" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="917" cy="571" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="804" cy="569" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="810" cy="421" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="795" cy="285" rx="14" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="763" cy="535" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="961" cy="532" rx="15" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="766" cy="423" rx="16" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="707" cy="327" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="772" cy="513" rx="14" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="898" cy="348" rx="15" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="946" cy="569" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="728" cy="368" rx="14" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="895" cy="305" rx="16" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="846" cy="438" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="771" cy="587" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="725" cy="534" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="680" cy="608" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="974" cy="397" rx="15" ry="11" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="791" cy="648" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="682" cy="492" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="677" cy="311" rx="13" ry="10" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="690" cy="444" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="783" cy="350" rx="14" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="746" cy="568" rx="13" ry="8" fill="#65A30D"/>
+            <ellipse class="cell" cx="872" cy="417" rx="14" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="695" cy="347" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="933" cy="365" rx="16" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="841" cy="520" rx="14" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="874" cy="460" rx="13" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="942" cy="493" rx="13" ry="8" fill="#22C55E"/>
+            <ellipse class="cell" cx="797" cy="437" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="903" cy="556" rx="17" ry="14" fill="#4ADE80"/>
+            <ellipse class="cell" cx="826" cy="540" rx="15" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="690" cy="475" rx="13" ry="9" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="745" cy="309" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="920" cy="495" rx="13" ry="8" fill="#65A30D"/>
+            <ellipse class="cell" cx="823" cy="591" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="683" cy="593" rx="13" ry="8" fill="#22C55E"/>
+            <ellipse class="cell" cx="788" cy="532" rx="17" ry="13" fill="#86EFAC"/>
+            <ellipse class="cell" cx="740" cy="460" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="867" cy="324" rx="16" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="737" cy="626" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="963" cy="499" rx="14" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="664" cy="515" rx="14" ry="11" fill="#65A30D"/>
+            <ellipse class="cell" cx="840" cy="398" rx="16" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="840" cy="590" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="818" cy="474" rx="15" ry="10" fill="#65A30D"/>
+            <ellipse class="cell" cx="857" cy="531" rx="15" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="851" cy="607" rx="17" ry="14" fill="#4ADE80"/>
+            <ellipse class="cell" cx="722" cy="416" rx="17" ry="12" fill="#65A30D"/>
+            <ellipse class="cell" cx="859" cy="363" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="723" cy="348" rx="16" ry="11" fill="#22C55E"/>
+            <ellipse class="cell" cx="917" cy="419" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="866" cy="633" rx="14" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="733" cy="328" rx="15" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="867" cy="401" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="809" cy="271" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="854" cy="264" rx="17" ry="14" fill="#86EFAC"/>
+            <ellipse class="cell" cx="799" cy="474" rx="13" ry="9" fill="#86EFAC"/>
+            <ellipse class="cell" cx="818" cy="363" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="959" cy="454" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="886" cy="588" rx="15" ry="10" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="879" cy="305" rx="14" ry="9" fill="#86EFAC"/>
+            <ellipse class="cell" cx="854" cy="496" rx="17" ry="13" fill="#22C55E"/>
+            <ellipse class="cell" cx="725" cy="456" rx="15" ry="12" fill="#86EFAC"/>
+            <ellipse class="cell" cx="974" cy="359" rx="14" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="998" cy="476" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="887" cy="323" rx="13" ry="9" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="954" cy="519" rx="16" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="867" cy="558" rx="17" ry="12" fill="#A7F3D0"/>
+            <ellipse class="cell" cx="793" cy="549" rx="13" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="919" cy="461" rx="13" ry="8" fill="#4ADE80"/>
+            <ellipse class="cell" cx="696" cy="460" rx="13" ry="9" fill="#4ADE80"/>
+            <ellipse class="cell" cx="856" cy="426" rx="15" ry="12" fill="#4ADE80"/>
+            <ellipse class="cell" cx="953" cy="477" rx="14" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="868" cy="435" rx="13" ry="9" fill="#65A30D"/>
+            <ellipse class="cell" cx="719" cy="269" rx="13" ry="10" fill="#22C55E"/>
+            <ellipse class="cell" cx="818" cy="551" rx="13" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="980" cy="385" rx="13" ry="10" fill="#86EFAC"/>
+            <ellipse class="cell" cx="926" cy="513" rx="15" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="937" cy="421" rx="14" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="743" cy="498" rx="17" ry="13" fill="#4ADE80"/>
+            <ellipse class="cell" cx="713" cy="442" rx="15" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="676" cy="426" rx="14" ry="10" fill="#65A30D"/>
+            <ellipse class="cell" cx="907" cy="476" rx="15" ry="11" fill="#4ADE80"/>
+            <ellipse class="cell" cx="692" cy="556" rx="14" ry="10" fill="#4ADE80"/>
+            <ellipse class="cell" cx="669" cy="367" rx="16" ry="11" fill="#86EFAC"/>
+            <ellipse class="cell" cx="904" cy="593" rx="17" ry="14" fill="#4ADE80"/>
+            <ellipse class="cell" cx="610" cy="462" rx="13" ry="9" fill="#22C55E"/>
+            <ellipse class="cell" cx="667" cy="558" rx="15" ry="11" fill="#4ADE80"/>
+          </g>
+
+          <!-- Segmentation mask outlines — drawn over a subset of cells.
+               Doesn't need to match every cell; the point is "AI is seeing them." -->
+          <g class="seg-mask" stroke="#84CC16" stroke-width="1.2" fill="none" opacity="0.85">
+            <ellipse cx="780" cy="380" rx="16" ry="12"/>
+            <ellipse cx="820" cy="395" rx="14" ry="11"/>
+            <ellipse cx="750" cy="410" rx="16" ry="12"/>
+            <ellipse cx="800" cy="430" rx="15" ry="11"/>
+            <ellipse cx="850" cy="425" rx="16" ry="12"/>
+            <ellipse cx="720" cy="445" rx="14" ry="10"/>
+            <ellipse cx="780" cy="460" rx="17" ry="13"/>
+            <ellipse cx="830" cy="470" rx="15" ry="11"/>
+            <ellipse cx="870" cy="455" rx="14" ry="10"/>
+            <ellipse cx="755" cy="490" rx="16" ry="12"/>
+            <ellipse cx="810" cy="500" rx="15" ry="11"/>
+            <ellipse cx="850" cy="510" rx="16" ry="12"/>
+            <ellipse cx="780" cy="525" rx="14" ry="10"/>
+            <ellipse cx="730" cy="475" rx="15" ry="11"/>
+            <ellipse cx="880" cy="490" rx="14" ry="10"/>
+            <ellipse cx="700" cy="420" rx="16" ry="12"/>
+            <ellipse cx="900" cy="435" rx="15" ry="11"/>
+          </g>
+
+          <!-- Sweeping scan line — animated via .scan-line CSS class -->
+          <line class="scan-line" x1="600" y1="250" x2="1000" y2="250" stroke="#A855F7" stroke-width="2" filter="url(#glow)"/>
+        </g>
+
+        <!-- Frame circle -->
+        <circle cx="800" cy="450" r="200" fill="none" stroke="#A855F7" stroke-width="0.5" opacity="0.6"/>
+
+        <!-- Corner brackets -->
+        <g stroke="#A855F7" stroke-width="1" fill="none">
+          <path d="M 590 240 L 590 270 L 620 270"/>
+          <path d="M 1010 240 L 1010 270 L 980 270"/>
+          <path d="M 590 660 L 590 630 L 620 630"/>
+          <path d="M 1010 660 L 1010 630 L 980 630"/>
+        </g>
+
+        <!-- LEFT GUTTER — model identity + frame timestamp -->
+        <g font-family="JetBrains Mono">
+          <g transform="translate(220, 360)">
+            <text class="hud-label" x="0" y="0">VISION MODEL</text>
+            <text class="hud-value" x="0" y="20" font-size="15">APPRAISEYE-V4</text>
+            <text class="hud-label" x="0" y="40" font-size="9">LIVE INFERENCE · 30 FPS</text>
+          </g>
+          <g transform="translate(220, 440)">
+            <text class="hud-label" x="0" y="0">FRAME</text>
+            <text class="hud-value" x="0" y="20" font-size="15" id="frameNum">14:32:08</text>
+          </g>
+          <g transform="translate(220, 510)">
+            <text class="hud-label" x="0" y="0">VESSEL</text>
+            <text class="hud-value" x="0" y="20" font-size="15">B-5</text>
+          </g>
+        </g>
+
+        <!-- RIGHT GUTTER — live measurement readouts -->
+        <g font-family="JetBrains Mono">
+          <g transform="translate(1100, 320)">
+            <text class="hud-label" x="0" y="0">CONFLUENCE</text>
+            <text class="hud-value" x="0" y="26" font-size="24" id="confluence">87.0%</text>
+          </g>
+          <g transform="translate(1100, 400)">
+            <text class="hud-label" x="0" y="0">VIABILITY</text>
+            <text class="hud-value" x="0" y="26" font-size="24">98.4%</text>
+          </g>
+          <g transform="translate(1100, 480)">
+            <text class="hud-label" x="0" y="0">CELL COUNT</text>
+            <text class="hud-value" x="0" y="26" font-size="24" id="cellCount">2.84e6</text>
+          </g>
+          <g transform="translate(1100, 560)">
+            <text class="hud-label" x="0" y="0">TITER (PROJ.)</text>
+            <text class="hud-value" x="0" y="26" font-size="24">1.2e13</text>
+          </g>
+        </g>
+      </g>
+
+
+      <!-- ============ BEAT 4 — FAULT ISOLATION + PULL BACK ============ -->
+      <g class="scene-isolation">
+        <!-- Re-render the cabinet at slightly smaller scale (we're "pulling out") -->
+        <g transform="translate(450, 100) scale(1.0)">
+          <ellipse cx="300" cy="690" rx="320" ry="14" fill="black" opacity="0.4"/>
+
+          <rect x="20" y="20" width="560" height="640" rx="6" fill="url(#steelFront)"/>
+          <path d="M 20 20 L 580 20 L 590 10 L 30 10 Z" fill="url(#steelTop)"/>
+          <rect x="40" y="40" width="520" height="600" rx="3" fill="#1F2937" stroke="#9CA3AF" stroke-width="2"/>
+          <rect x="44" y="44" width="512" height="592" rx="2" fill="url(#glassGradient)"/>
+          <rect x="60" y="50" width="480" height="3" fill="#A855F7" opacity="0.8"/>
+
+          <!-- LEDs all green -->
+          <circle class="led" cx="60" cy="655" r="3" fill="#4ADE80"/>
+          <circle class="led led-2" cx="75" cy="655" r="3" fill="#4ADE80"/>
+
+          <!-- 3×3 grid of physical roller bottles, end-on view, larger scale.
+               Each bottle runs its own program (serotype/condition), color-coded by status strip.
+               This is the "Programmable Microenvironments" beat from slide 3 of the deck. -->
+          <!-- B-1 · AAV9 -->
+          <g transform="translate(140, 170)">
+            <ellipse cx="2" cy="76" rx="68" ry="7" fill="#000" opacity="0.4"/>
+            <circle r="70" fill="url(#bottleBody)"/>
+            <circle r="70" fill="url(#cellTint)"/>
+            <circle r="22" fill="url(#driveHead)"/>
+            <circle r="3.5" fill="#2A2A2A"/>
+            <circle r="70" fill="url(#bottleGlint)"/>
+            <circle r="70" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-0.3s">
+              <circle cx="62" cy="0" r="3" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+            <!-- Program status strip (color-coded by program) -->
+            <rect x="-50" y="92" width="100" height="3" fill="#4ADE80" filter="url(#softGlow)" opacity="0.8"/>
+            <!-- Program label -->
+            <text x="0" y="104" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#4ADE80" opacity="0.95" letter-spacing="1">AAV9</text>
+          </g>
+          <!-- B-2 · AAV9 -->
+          <g transform="translate(300, 170)">
+            <ellipse cx="2" cy="76" rx="68" ry="7" fill="#000" opacity="0.4"/>
+            <circle r="70" fill="url(#bottleBody)"/>
+            <circle r="70" fill="url(#cellTint)"/>
+            <circle r="22" fill="url(#driveHead)"/>
+            <circle r="3.5" fill="#2A2A2A"/>
+            <circle r="70" fill="url(#bottleGlint)"/>
+            <circle r="70" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-1.8s">
+              <circle cx="62" cy="0" r="3" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+            <!-- Program status strip (color-coded by program) -->
+            <rect x="-50" y="92" width="100" height="3" fill="#4ADE80" filter="url(#softGlow)" opacity="0.8"/>
+            <!-- Program label -->
+            <text x="0" y="104" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#4ADE80" opacity="0.95" letter-spacing="1">AAV9</text>
+          </g>
+          <!-- B-3 · AAV5 -->
+          <g transform="translate(460, 170)">
+            <ellipse cx="2" cy="76" rx="68" ry="7" fill="#000" opacity="0.4"/>
+            <circle r="70" fill="url(#bottleBody)"/>
+            <circle r="70" fill="url(#cellTint)"/>
+            <circle r="22" fill="url(#driveHead)"/>
+            <circle r="3.5" fill="#2A2A2A"/>
+            <circle r="70" fill="url(#bottleGlint)"/>
+            <circle r="70" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-3.4s">
+              <circle cx="62" cy="0" r="3" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+            <!-- Program status strip (color-coded by program) -->
+            <rect x="-50" y="92" width="100" height="3" fill="#A855F7" filter="url(#softGlow)" opacity="0.8"/>
+            <!-- Program label -->
+            <text x="0" y="104" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#A855F7" opacity="0.95" letter-spacing="1">AAV5</text>
+          </g>
+          <!-- B-4 · AAV2 -->
+          <g transform="translate(140, 340)">
+            <ellipse cx="2" cy="76" rx="68" ry="7" fill="#000" opacity="0.4"/>
+            <circle r="70" fill="url(#bottleBody)"/>
+            <circle r="70" fill="url(#cellTint)"/>
+            <circle r="22" fill="url(#driveHead)"/>
+            <circle r="3.5" fill="#2A2A2A"/>
+            <circle r="70" fill="url(#bottleGlint)"/>
+            <circle r="70" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-0.9s">
+              <circle cx="62" cy="0" r="3" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+            <!-- Program status strip (color-coded by program) -->
+            <rect x="-50" y="92" width="100" height="3" fill="#22D3EE" filter="url(#softGlow)" opacity="0.8"/>
+            <!-- Program label -->
+            <text x="0" y="104" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#22D3EE" opacity="0.95" letter-spacing="1">AAV2</text>
+          </g>
+          <!-- B-5 · AAV9 -->
+          <g transform="translate(300, 340)">
+            <ellipse cx="2" cy="76" rx="68" ry="7" fill="#000" opacity="0.4"/>
+            <circle r="70" fill="url(#bottleBody)"/>
+            <circle r="70" fill="url(#cellTint)"/>
+            <circle r="22" fill="url(#driveHead)"/>
+            <circle r="3.5" fill="#2A2A2A"/>
+            <circle r="70" fill="url(#bottleGlint)"/>
+            <circle r="70" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-2.4s">
+              <circle cx="62" cy="0" r="3" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+            <!-- Program status strip (color-coded by program) -->
+            <rect x="-50" y="92" width="100" height="3" fill="#4ADE80" filter="url(#softGlow)" opacity="0.8"/>
+            <!-- Program label -->
+            <text x="0" y="104" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#4ADE80" opacity="0.95" letter-spacing="1">AAV9</text>
+          </g>
+          <!-- B-6 · AAV6 -->
+          <g transform="translate(460, 340)">
+            <ellipse cx="2" cy="76" rx="68" ry="7" fill="#000" opacity="0.4"/>
+            <circle r="70" fill="url(#bottleBody)"/>
+            <circle r="70" fill="url(#cellTint)"/>
+            <circle r="22" fill="url(#driveHead)"/>
+            <circle r="3.5" fill="#2A2A2A"/>
+            <circle r="70" fill="url(#bottleGlint)"/>
+            <circle r="70" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-4.1s">
+              <circle cx="62" cy="0" r="3" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+            <!-- Program status strip (color-coded by program) -->
+            <rect x="-50" y="92" width="100" height="3" fill="#EC4899" filter="url(#softGlow)" opacity="0.8"/>
+            <!-- Program label -->
+            <text x="0" y="104" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#EC4899" opacity="0.95" letter-spacing="1">AAV6</text>
+          </g>
+          <!-- B-7 · AAV8 -->
+          <g transform="translate(140, 510)">
+            <ellipse cx="2" cy="76" rx="68" ry="7" fill="#000" opacity="0.4"/>
+            <circle r="70" fill="url(#bottleBody)"/>
+            <circle r="70" fill="url(#cellTint)"/>
+            <circle r="22" fill="url(#driveHead)"/>
+            <circle r="3.5" fill="#2A2A2A"/>
+            <circle r="70" fill="url(#bottleGlint)"/>
+            <circle r="70" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-1.5s">
+              <circle cx="62" cy="0" r="3" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+            <!-- Program status strip (color-coded by program) -->
+            <rect x="-50" y="92" width="100" height="3" fill="#F59E0B" filter="url(#softGlow)" opacity="0.8"/>
+            <!-- Program label -->
+            <text x="0" y="104" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#F59E0B" opacity="0.95" letter-spacing="1">AAV8</text>
+          </g>
+          <!-- B-8 · AAV-DJ -->
+          <g transform="translate(300, 510)">
+            <ellipse cx="2" cy="76" rx="68" ry="7" fill="#000" opacity="0.4"/>
+            <circle r="70" fill="url(#bottleBody)"/>
+            <circle r="70" fill="url(#cellTint)"/>
+            <circle r="22" fill="url(#driveHead)"/>
+            <circle r="3.5" fill="#2A2A2A"/>
+            <circle r="70" fill="url(#bottleGlint)"/>
+            <circle r="70" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-3.1s">
+              <circle cx="62" cy="0" r="3" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+            <!-- Program status strip (color-coded by program) -->
+            <rect x="-50" y="92" width="100" height="3" fill="#3B82F6" filter="url(#softGlow)" opacity="0.8"/>
+            <!-- Program label -->
+            <text x="0" y="104" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#3B82F6" opacity="0.95" letter-spacing="1">AAV-DJ</text>
+          </g>
+          <!-- B-9 · AAV9 -->
+          <g transform="translate(460, 510)">
+            <ellipse cx="2" cy="76" rx="68" ry="7" fill="#000" opacity="0.4"/>
+            <circle r="70" fill="url(#bottleBody)"/>
+            <circle r="70" fill="url(#cellTint)"/>
+            <circle r="22" fill="url(#driveHead)"/>
+            <circle r="3.5" fill="#2A2A2A"/>
+            <circle r="70" fill="url(#bottleGlint)"/>
+            <circle r="70" fill="url(#bottleRim)"/>
+            <g class="rim-highlight" style="animation-delay:-4.7s">
+              <circle cx="62" cy="0" r="3" fill="#FFFFFF" opacity="0.85" filter="url(#softGlow)"/>
+            </g>
+            <!-- Program status strip (color-coded by program) -->
+            <rect x="-50" y="92" width="100" height="3" fill="#4ADE80" filter="url(#softGlow)" opacity="0.8"/>
+            <!-- Program label -->
+            <text x="0" y="104" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#4ADE80" opacity="0.95" letter-spacing="1">AAV9</text>
+          </g>
+        </g>
+
+        <!-- Right-side panel: batch report -->
+        <g transform="translate(1130, 220)">
+          <!-- Panel background -->
+          <rect x="0" y="0" width="340" height="460" rx="6" fill="#0A0420" stroke="#A855F7" stroke-width="0.5" opacity="0.95"/>
+          <!-- Header strip -->
+          <rect x="0" y="0" width="340" height="48" rx="6" fill="#1a0d3a"/>
+          <rect x="0" y="42" width="340" height="6" fill="#1a0d3a"/>
+          <text x="20" y="30" class="hud-label" font-size="10">BATCH 0042 · CAMPAIGN MATRIX</text>
+
+          <g font-family="JetBrains Mono" font-size="11">
+            <!-- Top stats: programs running and replicates -->
+            <g transform="translate(20, 78)">
+              <text class="hud-label" font-size="9">PROGRAMS</text>
+              <text class="hud-value" y="20" font-size="22">6</text>
+            </g>
+            <g transform="translate(180, 78)">
+              <text class="hud-label" font-size="9">REPLICATES</text>
+              <text class="hud-value" y="20" font-size="22">9</text>
+            </g>
+
+            <line x1="20" y1="125" x2="320" y2="125" stroke="#A855F7" stroke-width="0.3" opacity="0.4"/>
+
+            <!-- Per-vessel program assignments -->
+            <g transform="translate(20, 150)" font-size="10">
+              <text class="hud-label" font-size="9">VESSEL · PROGRAM</text>
+
+              <g transform="translate(0, 22)">
+                <circle cx="6" cy="-3" r="3" fill="#4ADE80"/>
+                <text x="18" y="0" fill="#F9FAFB">B-1   AAV9   lead</text>
+              </g>
+              <g transform="translate(0, 38)">
+                <circle cx="6" cy="-3" r="3" fill="#4ADE80"/>
+                <text x="18" y="0" fill="#F9FAFB">B-2   AAV9   lead</text>
+              </g>
+              <g transform="translate(0, 54)">
+                <circle cx="6" cy="-3" r="3" fill="#A855F7"/>
+                <text x="18" y="0" fill="#F9FAFB">B-3   AAV5   compare</text>
+              </g>
+              <g transform="translate(0, 70)">
+                <circle cx="6" cy="-3" r="3" fill="#22D3EE"/>
+                <text x="18" y="0" fill="#F9FAFB">B-4   AAV2   compare</text>
+              </g>
+              <g transform="translate(0, 86)">
+                <circle cx="6" cy="-3" r="3" fill="#4ADE80"/>
+                <text x="18" y="0" fill="#F9FAFB">B-5   AAV9   lead</text>
+              </g>
+              <g transform="translate(0, 102)">
+                <circle cx="6" cy="-3" r="3" fill="#EC4899"/>
+                <text x="18" y="0" fill="#F9FAFB">B-6   AAV6   compare</text>
+              </g>
+              <g transform="translate(0, 118)">
+                <circle cx="6" cy="-3" r="3" fill="#F59E0B"/>
+                <text x="18" y="0" fill="#F9FAFB">B-7   AAV8   compare</text>
+              </g>
+              <g transform="translate(0, 134)">
+                <circle cx="6" cy="-3" r="3" fill="#3B82F6"/>
+                <text x="18" y="0" fill="#F9FAFB">B-8   AAV-DJ engineered</text>
+              </g>
+              <g transform="translate(0, 150)">
+                <circle cx="6" cy="-3" r="3" fill="#4ADE80"/>
+                <text x="18" y="0" fill="#F9FAFB">B-9   AAV9   lead</text>
+              </g>
+            </g>
+
+            <line x1="20" y1="335" x2="320" y2="335" stroke="#A855F7" stroke-width="0.3" opacity="0.4"/>
+
+            <!-- Outcome -->
+            <g transform="translate(20, 360)" font-size="10">
+              <text class="hud-label" font-size="9">RUN STATUS</text>
+              <g transform="translate(0, 20)">
+                <text x="0" y="0" fill="#F9FAFB">All vessels:</text>
+                <text x="170" y="0" class="hud-value" font-size="13">NOMINAL</text>
+              </g>
+              <g transform="translate(0, 42)">
+                <text x="0" y="0" fill="#F9FAFB">Comparability:</text>
+                <text x="170" y="0" class="hud-value" font-size="13">PER PROGRAM</text>
+              </g>
+            </g>
+          </g>
+        </g>
+
+        <!-- Left-side: marquee stat — reframed around parallel programs -->
+        <g transform="translate(80, 380)">
+          <text class="hud-label" font-size="10" x="0" y="0">PARALLEL PROGRAMS</text>
+          <text x="0" y="50" font-family="Instrument Serif" font-size="62" fill="#F9FAFB">9<tspan fill="#A855F7"> · </tspan>1</text>
+          <text x="0" y="78" class="hud-label" font-size="10">VESSELS · BATCH</text>
+          <line x1="0" y1="100" x2="220" y2="100" stroke="#A855F7" stroke-width="0.5" opacity="0.6"/>
+          <text x="0" y="125" font-family="Inter" font-size="13" fill="#C084FC" font-style="italic">Per-vessel control for</text>
+          <text x="0" y="143" font-family="Inter" font-size="13" fill="#C084FC" font-style="italic">parallel optimization.</text>
+        </g>
+      </g>
+
+    </svg>
+  </div>
+</div>
+
+<script>
+  // Tick the live numbers during Beat 3 (vision overlay)
+  // Beat 3 runs roughly 6.5s -> 10s in a 14s loop
+  const confluenceEl = document.getElementById('confluence');
+  const cellCountEl  = document.getElementById('cellCount');
+  const frameEl      = document.getElementById('frameNum');
+
+  const startTime = performance.now();
+  function tick() {
+    const elapsed = (performance.now() - startTime) / 1000;
+    const t = elapsed % 14; // current loop position in seconds
+
+    // Update only when in beat 3 (visible)
+    if (t >= 6.5 && t <= 10) {
+      const localT = (t - 6.5) / 3.5; // 0..1 within beat
+      const conf   = (87 + localT * 4).toFixed(1);
+      const cells  = (2.84 + localT * 0.18).toFixed(2);
+      confluenceEl.textContent = conf + '%';
+      cellCountEl.textContent  = cells + 'e6';
+
+      // Tick the timestamp (HH:MM:SS)
+      const baseSec = 14 * 3600 + 32 * 60 + 8;
+      const sec     = baseSec + Math.floor(elapsed);
+      const hh      = String(Math.floor(sec / 3600) % 24).padStart(2, '0');
+      const mm      = String(Math.floor(sec / 60) % 60).padStart(2, '0');
+      const ss      = String(sec % 60).padStart(2, '0');
+      frameEl.textContent = `${hh}:${mm}:${ss}`;
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+</script>
+
+</body>
+</html>
