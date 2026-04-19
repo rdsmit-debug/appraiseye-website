@@ -123,23 +123,26 @@
   }
 
   /* HUD columns are pinned absolutely to the top of the stage so they never
-     get pushed down by grid-row stretching. Heights are content-driven. */
+     get pushed down by grid-row stretching. The persistent top card renders
+     in normal flow inside the column; the beat-slot is positioned absolutely
+     immediately below it, so neither flex nor grid behaviour can push the
+     beat cards to the bottom. */
   .left-hud, .right-hud {
     position: absolute;
     top: 56px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
     z-index: 3;
   }
   .left-hud  { left: 40px;  width: 280px; }
   .right-hud { right: 40px; width: 300px; }
 
-  /* Beat cards in the HUD columns share a single absolutely-positioned slot,
-     so only the visible beat's card consumes visual space. Children anchor
-     to top-left of the slot so single-card beats don't stretch vertically. */
+  /* Beat cards share one slot, pinned directly under the persistent top card.
+     Children of the slot anchor to its top, so every beat card starts at the
+     same y-position regardless of internal content height. */
   .hud-beat-slot {
-    position: relative;
+    position: absolute;
+    top: 112px;   /* persistent top card height (~100px) + 12px gap */
+    left: 0;
+    right: 0;
     min-height: 92px;
   }
   .hud-beat-slot > * {
@@ -272,15 +275,6 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-  }
-
-  .caption-eyebrow {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.24em;
-    color: var(--purple-3);
-    text-transform: uppercase;
   }
 
   .caption-text {
@@ -1122,19 +1116,15 @@
     <!-- ========== CAPTIONS ========== -->
     <div class="caption-row">
       <div class="caption beat-1">
-        <div class="caption-eyebrow">BEAT 01 · CASE IN PROGRESS</div>
         <div class="caption-text">Every pickup. <em>Logged.</em></div>
       </div>
       <div class="caption beat-2">
-        <div class="caption-eyebrow">BEAT 02 · POST-CASE ANALYSIS</div>
         <div class="caption-text">Every interaction. <em>Classified.</em></div>
       </div>
       <div class="caption beat-3">
-        <div class="caption-eyebrow">BEAT 03 · REFINEMENT DRAFT</div>
         <div class="caption-text">Every tray. <em>Refined.</em></div>
       </div>
       <div class="caption beat-4">
-        <div class="caption-eyebrow" style="color: #4ADE80;">BEAT 04 · MAXIMIZED UTILIZATION</div>
         <div class="caption-text">Every case. <em style="color: #4ADE80;">Compounds.</em></div>
       </div>
     </div>
