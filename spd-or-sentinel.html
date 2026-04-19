@@ -132,7 +132,7 @@
     align-items: center;
     justify-content: flex-start;
     gap: 18px;
-    padding-top: 130px; /* reserve space for the floating stat card above the tray */
+    padding-top: 110px; /* reserve space for the floating stat card above the tray */
     min-height: 0;
   }
 
@@ -159,11 +159,12 @@
     position: relative;
   }
 
-  /* Floating stat card — anchored to main-stage top-right corner, sits ABOVE
-     the tray (not over it). No collision with SVG content at any beat. */
+  /* Floating stat card — anchored to main-stage top-right corner. Negative
+     top lifts it into the (now-empty on the right) top-bar row so it sits
+     above the tray without taking vertical space from the animation. */
   .float-stat {
     position: absolute;
-    top: 0;
+    top: -22px;
     right: 0;
     width: 220px;
     z-index: 5;
@@ -479,7 +480,7 @@
       margin-bottom: 8px;
     }
     .main-stage {
-      padding-top: 74px;
+      padding-top: 60px;
       gap: 6px;
     }
     .tray-wrap { max-width: 400px; }
@@ -488,7 +489,10 @@
     .caption-text { font-size: 22px; line-height: 1.1; }
     .caption-eyebrow { font-size: 9px; letter-spacing: 0.22em; }
     .hud-value { font-size: 10px; }
-    .float-stat { width: 150px; }
+    .float-stat {
+      top: -28px;   /* lift stat card into the empty right side of top-bar */
+      width: 150px;
+    }
     .float-stat .hud-beat-slot { min-height: 92px; }
     .progress-track { bottom: 12px; left: 24px; right: 24px; }
   }
@@ -516,7 +520,6 @@
 
     <!-- ========== TOP BAR ========== -->
     <div class="top-bar">
-      <div class="brand">APPR<span class="ai">AI</span>SEYE · SPD-OR SENTINEL</div>
       <div class="status-indicator">
         <span class="dot"></span>
         <span>LIVE · CONTINUOUS MONITORING</span>
