@@ -475,27 +475,6 @@
     .hud-value { font-size: 11px; }
     .top-bar { font-size: 10px; }
   }
-
-  /* Below 600px the 200px side HUDs don't fit — hide them and let the
-     central tray animation + caption carry the story. */
-  @media (max-width: 600px) {
-    .frame {
-      grid-template-columns: 1fr;
-      padding: 18px 14px 36px;
-      gap: 12px;
-    }
-    .left-hud, .right-hud { display: none; }
-    .caption-row {
-      position: absolute;
-      left: 16px;
-      right: 16px;
-      bottom: 24px;
-      height: auto;
-    }
-    .caption-text { font-size: 22px; line-height: 1.1; }
-    .top-bar { font-size: 9px; letter-spacing: 0.08em; }
-    .top-bar .status-indicator { gap: 6px; }
-  }
 </style>
 </head>
 <body>
