@@ -80,17 +80,14 @@
   .frame {
     position: absolute;
     inset: 0;
-    display: grid;
-    grid-template-columns: 280px 1fr 300px;
-    grid-template-rows: auto 1fr auto;
-    gap: 18px;
-    padding: 28px 40px 42px;
+    display: flex;
+    flex-direction: column;
+    padding: 36px 56px 64px;
     z-index: 2;
   }
 
   .top-bar {
-    grid-column: 1 / -1;
-    grid-row: 1;
+    flex: 0 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -99,6 +96,7 @@
     letter-spacing: 0.12em;
     color: var(--text-dim);
     text-transform: uppercase;
+    margin-bottom: 24px;
   }
 
   .top-bar .brand { color: var(--purple-3); font-weight: 500; }
@@ -122,44 +120,25 @@
     50% { opacity: 0.4; }
   }
 
-  /* HUD columns are pinned absolutely to the top of the stage so they never
-     get pushed down by grid-row stretching. The persistent top card renders
-     in normal flow inside the column; the beat-slot is positioned absolutely
-     immediately below it, so neither flex nor grid behaviour can push the
-     beat cards to the bottom. */
-  .left-hud, .right-hud {
-    position: absolute;
-    top: 56px;
-    z-index: 3;
-  }
-  .left-hud  { left: 40px;  width: 280px; }
-  .right-hud { right: 40px; width: 300px; }
+  /* ================================
+     MAIN STAGE — tray centered, caption below, optional floating stat card
+     ================================ */
 
-  /* Beat cards share one slot, pinned directly under the persistent top card.
-     Children of the slot anchor to its top, so every beat card starts at the
-     same y-position regardless of internal content height. */
-  .hud-beat-slot {
-    position: absolute;
-    top: 112px;   /* persistent top card height (~100px) + 12px gap */
-    left: 0;
-    right: 0;
-    min-height: 92px;
-  }
-  .hud-beat-slot > * {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-  }
-
-  /* Right HUD's beat-4 stack is taller (three stat tiles), so give its slot more height */
-  .right-hud .hud-beat-slot {
-    min-height: 220px;
+  .main-stage {
+    flex: 1 1 auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 18px;
+    padding-top: 130px; /* reserve space for the floating stat card above the tray */
+    min-height: 0;
   }
 
   .tray-wrap {
-    grid-column: 2;
-    grid-row: 2;
+    width: 100%;
+    max-width: 980px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -168,21 +147,39 @@
 
   .tray-svg {
     width: 100%;
-    max-width: 880px;
     height: auto;
     filter: drop-shadow(0 20px 60px rgba(139, 92, 246, 0.15));
   }
 
-  /* Caption is pinned absolutely in a safe horizontal band that never overlaps
-     the side HUD columns. It sits between the two hud columns, centered. */
+  /* Caption sits directly below the tray, in the same centered column */
   .caption-row {
-    position: absolute;
-    left: 340px;
-    right: 360px;
-    bottom: 40px;
-    height: 62px;
+    width: 100%;
     text-align: center;
-    z-index: 3;
+    min-height: 76px;
+    position: relative;
+  }
+
+  /* Floating stat card — anchored to main-stage top-right corner, sits ABOVE
+     the tray (not over it). No collision with SVG content at any beat. */
+  .float-stat {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 220px;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  /* Floating stat card child shares one absolutely-positioned slot */
+  .float-stat .hud-beat-slot {
+    position: relative;
+    min-height: 110px;
+  }
+  .float-stat .hud-beat-slot > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
   }
 
   .hud-card {
@@ -278,15 +275,24 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 10px;
+  }
+
+  .caption-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    color: var(--purple-3);
+    text-transform: uppercase;
   }
 
   .caption-text {
     font-family: 'Instrument Serif', serif;
-    font-size: 26px;
+    font-size: 36px;
     font-weight: 400;
     letter-spacing: -0.01em;
     color: var(--text-primary);
-    line-height: 1.05;
+    line-height: 1.1;
   }
 
   .caption-text em { font-style: italic; color: var(--purple-3); }
@@ -452,28 +458,22 @@
 
   @media (max-width: 1100px) {
     .frame {
-      grid-template-columns: 240px 1fr 260px;
-      padding: 28px 32px 52px;
-      gap: 20px;
+      padding: 28px 40px 56px;
     }
-    .left-hud  { left: 32px;  width: 240px; }
-    .right-hud { right: 32px; width: 260px; }
-    .caption-row { left: 290px; right: 310px; }
+    .tray-svg { max-width: 820px; }
     .caption-text { font-size: 32px; }
+    .float-stat { width: 210px; }
   }
 
   @media (max-width: 900px) {
     .frame {
-      grid-template-columns: 200px 1fr 200px;
-      padding: 24px 24px 48px;
-      gap: 16px;
+      padding: 24px 28px 48px;
     }
-    .left-hud  { left: 24px;  width: 200px; }
-    .right-hud { right: 24px; width: 200px; }
-    .caption-row { left: 240px; right: 240px; }
+    .tray-svg { max-width: 100%; }
     .caption-text { font-size: 26px; }
     .hud-value { font-size: 11px; }
     .top-bar { font-size: 10px; }
+    .float-stat { width: 180px; }
   }
 </style>
 </head>
@@ -492,88 +492,80 @@
       </div>
     </div>
 
-    <!-- ========== LEFT HUD ========== -->
-    <div class="left-hud">
+    <!-- ========== MAIN STAGE: tray + caption + floating stat card ========== -->
+    <div class="main-stage">
 
-      <!-- Persistent procedure context -->
-      <div class="hud-card">
-        <div class="hud-label">PROCEDURE</div>
-        <div class="hud-value">
-          <span class="accent">OR 4</span> · ORTHO SPINE<br/>
-          PROC <span class="accent">#1472</span><br/>
-          <span class="muted" id="procClock">14:08:22</span>
+      <!-- Floating stat card, anchored to main-stage top-right. Sits in the empty
+           space above the tray, so it never overlaps SVG content. Beat 1 empty. -->
+      <div class="float-stat">
+        <div class="hud-beat-slot">
+
+          <!-- Beat 1: no card — tray breathes alone -->
+
+          <!-- Beat 2: utilization finding -->
+          <div class="hud-card beat-2" style="padding: 14px 16px;">
+            <div class="hud-label">UTILIZATION</div>
+            <div style="font-family: 'Instrument Serif', serif; font-size: 42px;
+                        line-height: 1; color: #FBBF24;
+                        letter-spacing: -0.02em; margin: 4px 0 4px;">
+              17%
+            </div>
+            <div class="hud-value" style="font-size: 10px;">
+              <span class="muted">17 OF 100 USED</span>
+            </div>
+          </div>
+
+          <!-- Beat 3: recommended reduction -->
+          <div class="hud-card beat-3" style="padding: 14px 16px; border-color: rgba(168, 85, 247, 0.5); box-shadow: 0 0 16px rgba(168, 85, 247, 0.15);">
+            <div class="hud-label" style="color: #C084FC;">RECOMMENDED</div>
+            <div style="font-family: 'Instrument Serif', serif; font-size: 42px;
+                        line-height: 1; color: #C084FC;
+                        letter-spacing: -0.02em; margin: 4px 0 4px;">
+              &minus;60%
+            </div>
+            <div class="hud-value" style="font-size: 10px;">
+              <span class="muted">100 &rarr; 40 · </span><span class="amber">60 FLAGGED</span>
+            </div>
+          </div>
+
+          <!-- Beat 4: $400K annual savings, hero stat -->
+          <div class="hud-card beat-4" style="padding: 14px 16px; border-color: rgba(74, 222, 128, 0.5); background: linear-gradient(135deg, rgba(74,222,128,0.08), rgba(139,92,246,0.04)); box-shadow: 0 0 24px rgba(74, 222, 128, 0.2);">
+            <div class="hud-label" style="color: #4ADE80;">ANNUAL SAVINGS</div>
+            <div style="font-family: 'Instrument Serif', serif; font-size: 42px;
+                        line-height: 1; color: #4ADE80;
+                        letter-spacing: -0.02em; margin: 4px 0 4px;">
+              $400K
+            </div>
+            <div class="hud-value" style="font-size: 10px;">
+              <span class="green">PER SURGEON</span> <span class="muted">· PER REFINEMENT</span>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <!-- Beat-specific cards share one absolutely-positioned slot -->
-      <div class="hud-beat-slot">
+      <!-- ========== CENTER: TRAY SVG ========== -->
+      <div class="tray-wrap">
 
-        <!-- Beat 1: case in progress -->
-        <div class="hud-card beat-1">
-          <div class="hud-label">CASE IN PROGRESS</div>
-          <div class="hud-value">
-            <span class="muted">TRAY TOTAL</span> <span class="accent">100</span><br/>
-            <span class="muted">TOUCH EVENTS</span> <span class="cyan" id="touchCount">142</span><br/>
-            <span class="muted">ELAPSED</span> <span class="accent" id="elapsed">01:18:47</span>
-          </div>
-        </div>
+        <svg class="tray-svg" viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="greenGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="1.5"/>
+              <feMerge>
+                <feMergeNode/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
 
-        <!-- Beat 2: post-case analysis -->
-        <div class="hud-card beat-2">
-          <div class="hud-label">POST-CASE ANALYSIS</div>
-          <div class="hud-value">
-            <span class="green">USED</span> <span class="green">17</span><br/>
-            <span class="muted">UNUSED</span> <span class="muted">83</span><br/>
-            <span class="muted">UTILIZATION</span> <span class="amber">17%</span>
-          </div>
-        </div>
-
-        <!-- Beat 3: refinement draft -->
-        <div class="hud-card beat-3" style="border-color: rgba(168, 85, 247, 0.5); box-shadow: 0 0 16px rgba(168, 85, 247, 0.15);">
-          <div class="hud-label" style="color: var(--purple-3);">REFINEMENT DRAFT</div>
-          <div class="hud-value">
-            <span class="muted">BASELINE</span> <span class="muted">100</span><br/>
-            <span class="muted">RECOMMENDED</span> <span class="accent">40</span><br/>
-            <span class="muted">FLAGGED</span> <span class="amber">60</span>
-          </div>
-        </div>
-
-        <!-- Beat 4: tray refined -->
-        <div class="hud-card beat-4" style="border-color: rgba(74, 222, 128, 0.5); box-shadow: 0 0 16px rgba(74, 222, 128, 0.15);">
-          <div class="hud-label" style="color: var(--green-used);">TRAY REFINED</div>
-          <div class="hud-value">
-            <span class="green">40-PIECE SET</span><br/>
-            <span class="muted">APPROVED · SPD</span><br/>
-            <span class="muted">ROLLING FORWARD</span>
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-
-    <!-- ========== CENTER: TRAY SVG ========== -->
-    <div class="tray-wrap">
-
-      <svg class="tray-svg" viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <filter id="greenGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="1.5"/>
-            <feMerge>
-              <feMergeNode/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-
-        <!-- ===== BEAT 1 ===== -->
-        <g class="beat-1">
-          <rect class="dot-tray-frame" x="20" y="30" width="350" height="360" rx="8"/>
-          <text x="30" y="22" font-family="JetBrains Mono, monospace" font-size="8"
-                fill="rgba(139,92,246,0.55)" letter-spacing="2">
-            BACK_TABLE · 50 INSTRUMENTS
-          </text>
-          <polyline points="30,40 30,30 40,30" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+          <!-- ===== BEAT 1 ===== -->
+          <g class="beat-1">
+            <rect class="dot-tray-frame" x="20" y="30" width="350" height="360" rx="8"/>
+            <text x="30" y="22" font-family="JetBrains Mono, monospace" font-size="8"
+                  fill="rgba(139,92,246,0.55)" letter-spacing="2">
+              BACK_TABLE · 50 INSTRUMENTS
+            </text>
+            <polyline points="30,40 30,30 40,30" fill="none" stroke="#A855F7" stroke-width="1.5"/>
           <polyline points="350,30 360,30 360,40" fill="none" stroke="#A855F7" stroke-width="1.5"/>
           <polyline points="30,380 30,390 40,390" fill="none" stroke="#A855F7" stroke-width="1.5"/>
           <polyline points="350,390 360,390 360,380" fill="none" stroke="#A855F7" stroke-width="1.5"/>
@@ -883,65 +875,69 @@
 
         <!-- ===== BEAT 3 ===== -->
         <g class="beat-3">
-          <!-- Headline block -->
-          <g class="insight-block" transform="translate(380, 90)">
-            <text x="0" y="0" text-anchor="middle"
-                  font-family="JetBrains Mono, monospace" font-size="10"
-                  fill="#C084FC" letter-spacing="3">
-              CASE CLOSED · ANALYSIS READY
-            </text>
-            <text x="0" y="48" text-anchor="middle"
-                  font-family="Instrument Serif, serif" font-size="42"
-                  fill="#F9FAFB" letter-spacing="-0.02em">
-              100 instruments opened.
-            </text>
-            <text x="0" y="100" text-anchor="middle"
-                  font-family="Instrument Serif, serif" font-size="42"
-                  fill="#F9FAFB" letter-spacing="-0.02em" font-style="italic">
-              Only <tspan fill="#4ADE80" font-style="italic">17</tspan> used.
-            </text>
+          <!-- Headline block: outer <g> positions, inner <g> animates -->
+          <g transform="translate(380, 90)">
+            <g class="insight-block">
+              <text x="0" y="0" text-anchor="middle"
+                    font-family="JetBrains Mono, monospace" font-size="10"
+                    fill="#C084FC" letter-spacing="3">
+                CASE CLOSED · ANALYSIS READY
+              </text>
+              <text x="0" y="48" text-anchor="middle"
+                    font-family="Instrument Serif, serif" font-size="42"
+                    fill="#F9FAFB" letter-spacing="-0.02em">
+                100 instruments opened.
+              </text>
+              <text x="0" y="100" text-anchor="middle"
+                    font-family="Instrument Serif, serif" font-size="42"
+                    fill="#F9FAFB" letter-spacing="-0.02em" font-style="italic">
+                Only <tspan fill="#4ADE80" font-style="italic">17</tspan> used.
+              </text>
+            </g>
           </g>
 
-          <!-- Before/after bar -->
-          <g class="insight-block" transform="translate(380, 260)" style="animation-delay: 0.25s;">
-            <text x="0" y="0" text-anchor="middle"
-                  font-family="JetBrains Mono, monospace" font-size="10"
-                  fill="rgba(249, 250, 251, 0.38)" letter-spacing="2.5">
-              TRAY COMPOSITION · BEFORE vs AFTER
-            </text>
+          <!-- Before/after bar: outer <g> positions, inner <g> animates -->
+          <g transform="translate(380, 260)">
+            <g class="insight-block" style="animation-delay: 0.25s;">
+              <text x="0" y="0" text-anchor="middle"
+                    font-family="JetBrains Mono, monospace" font-size="10"
+                    fill="rgba(249, 250, 251, 0.38)" letter-spacing="2.5">
+                TRAY COMPOSITION · BEFORE vs AFTER
+              </text>
 
-            <!-- Baseline: 100 (340px wide = full) -->
-            <g transform="translate(-170, 24)">
-              <text x="-8" y="8" text-anchor="end"
-                    font-family="JetBrains Mono, monospace" font-size="9"
-                    fill="rgba(249, 250, 251, 0.38)" letter-spacing="1.5">BASELINE</text>
-              <rect x="0" y="0" width="340" height="12" rx="3"
-                    fill="rgba(245, 158, 11, 0.15)"/>
-              <rect x="0" y="0" width="340" height="12" rx="3" class="bar-reveal"
-                    fill="#F59E0B" style="transform-origin: left;" opacity="0.85"/>
-              <text x="348" y="10" font-family="JetBrains Mono, monospace"
-                    font-size="11" fill="#FBBF24" letter-spacing="1" font-weight="600">100</text>
+              <!-- Baseline: 100 (340px wide = full) -->
+              <g transform="translate(-170, 24)">
+                <text x="-8" y="8" text-anchor="end"
+                      font-family="JetBrains Mono, monospace" font-size="9"
+                      fill="rgba(249, 250, 251, 0.38)" letter-spacing="1.5">BASELINE</text>
+                <rect x="0" y="0" width="340" height="12" rx="3"
+                      fill="rgba(245, 158, 11, 0.15)"/>
+                <rect x="0" y="0" width="340" height="12" rx="3" class="bar-reveal"
+                      fill="#F59E0B" style="transform-origin: left;" opacity="0.85"/>
+                <text x="348" y="10" font-family="JetBrains Mono, monospace"
+                      font-size="11" fill="#FBBF24" letter-spacing="1" font-weight="600">100</text>
+              </g>
+
+              <!-- Refined: 40 (136px wide = 40% of 340) -->
+              <g transform="translate(-170, 50)">
+                <text x="-8" y="8" text-anchor="end"
+                      font-family="JetBrains Mono, monospace" font-size="9"
+                      fill="rgba(249, 250, 251, 0.38)" letter-spacing="1.5">REFINED</text>
+                <rect x="0" y="0" width="340" height="12" rx="3"
+                      fill="rgba(139, 92, 246, 0.15)"/>
+                <rect x="0" y="0" width="136" height="12" rx="3" class="bar-reveal"
+                      fill="#A855F7" style="transform-origin: left; animation-delay: 0.15s;"/>
+                <text x="144" y="10" font-family="JetBrains Mono, monospace"
+                      font-size="11" fill="#C084FC" letter-spacing="1" font-weight="600">40</text>
+              </g>
+
+              <!-- Status line -->
+              <text x="0" y="96" text-anchor="middle"
+                    font-family="JetBrains Mono, monospace" font-size="10"
+                    fill="rgba(249, 250, 251, 0.6)" letter-spacing="1.8">
+                DRAFT SENT TO SPD · <tspan fill="#FBBF24">60 FLAGGED</tspan> · PENDING SURGEON SIGN-OFF
+              </text>
             </g>
-
-            <!-- Refined: 40 (136px wide = 40% of 340) -->
-            <g transform="translate(-170, 50)">
-              <text x="-8" y="8" text-anchor="end"
-                    font-family="JetBrains Mono, monospace" font-size="9"
-                    fill="rgba(249, 250, 251, 0.38)" letter-spacing="1.5">REFINED</text>
-              <rect x="0" y="0" width="340" height="12" rx="3"
-                    fill="rgba(139, 92, 246, 0.15)"/>
-              <rect x="0" y="0" width="136" height="12" rx="3" class="bar-reveal"
-                    fill="#A855F7" style="transform-origin: left; animation-delay: 0.15s;"/>
-              <text x="144" y="10" font-family="JetBrains Mono, monospace"
-                    font-size="11" fill="#C084FC" letter-spacing="1" font-weight="600">40</text>
-            </g>
-
-            <!-- Status line -->
-            <text x="0" y="96" text-anchor="middle"
-                  font-family="JetBrains Mono, monospace" font-size="10"
-                  fill="rgba(249, 250, 251, 0.6)" letter-spacing="1.8">
-              DRAFT SENT TO SPD · <tspan fill="#FBBF24">60 FLAGGED</tspan> · PENDING SURGEON SIGN-OFF
-            </text>
           </g>
         </g>
 
@@ -1018,120 +1014,30 @@
           <text x="380" y="395" text-anchor="middle"
                 font-family="JetBrains Mono, monospace" font-size="9"
                 fill="rgba(249, 250, 251, 0.35)" letter-spacing="2.5">
-            THOMAS JEFFERSON + MAYO CLINIC · CONTINUOUS SPD REFINEMENT
+            THOMAS JEFFERSON · CONTINUOUS SPD REFINEMENT
           </text>
         </g>
 
       </svg>
 
-    </div>
+      </div>
 
-    <!-- ========== RIGHT HUD ========== -->
-    <div class="right-hud">
-
-      <div class="hud-card">
-        <div class="hud-label">SYSTEM</div>
-        <div class="hud-value">
-          <span class="accent">SPD-OR SENTINEL</span><br/>
-          <span class="muted">CV-v4.2 · LIVE</span><br/>
-          <span class="muted">NODE: OR-04-A</span>
+      <!-- ========== CAPTIONS ========== -->
+      <div class="caption-row">
+        <div class="caption beat-1">
+          <div class="caption-text">Every pickup. <em>Logged.</em></div>
+        </div>
+        <div class="caption beat-2">
+          <div class="caption-text">Every interaction. <em>Classified.</em></div>
+        </div>
+        <div class="caption beat-3">
+          <div class="caption-text">Every tray. <em>Refined.</em></div>
+        </div>
+        <div class="caption beat-4">
+          <div class="caption-text">Every case. <em style="color: #4ADE80;">Compounds.</em></div>
         </div>
       </div>
 
-      <!-- Beat-specific cards share one absolutely-positioned slot -->
-      <div class="hud-beat-slot">
-
-        <div class="hud-card beat-1">
-          <div class="hud-label">CV PIPELINE</div>
-          <div class="hud-value">
-            <span class="muted">DETECT</span> <span class="cyan">●</span><br/>
-            <span class="muted">TRACK</span> <span class="cyan">●</span><br/>
-            <span class="muted">CLASSIFY</span> <span class="cyan">●</span>
-          </div>
-        </div>
-
-        <div class="hud-card beat-2">
-          <div class="hud-label">UTILIZATION</div>
-          <div style="font-family: 'Instrument Serif', serif; font-size: 38px;
-                      line-height: 1; color: #FBBF24;
-                      letter-spacing: -0.02em; margin: 6px 0 4px;">
-            17%
-          </div>
-          <div class="hud-value" style="font-size: 11px;">
-            <span class="muted">17 OF 100 INSTRUMENTS</span>
-          </div>
-        </div>
-
-        <div class="hud-card beat-3" style="border-color: rgba(168, 85, 247, 0.5);">
-          <div class="hud-label" style="color: #C084FC;">RECOMMENDED</div>
-          <div style="font-family: 'Instrument Serif', serif; font-size: 38px;
-                      line-height: 1; color: #C084FC;
-                      letter-spacing: -0.02em; margin: 6px 0 4px;">
-            −60%
-          </div>
-          <div class="hud-value" style="font-size: 11px;">
-            <span class="muted">100 → 40 INSTRUMENTS</span>
-          </div>
-        </div>
-
-        <!-- Beat 4: three stat tiles — parent controls visibility, children cascade -->
-        <div class="beat-4" style="display: flex; flex-direction: column; gap: 10px;">
-
-          <div class="stat-tile delay-1">
-            <div class="hud-card" style="padding: 14px 14px; border-color: rgba(74,222,128,0.5);
-                                          background: linear-gradient(135deg, rgba(74,222,128,0.08), rgba(139,92,246,0.04));">
-              <div class="hud-label" style="color: #4ADE80;">ANNUAL SAVINGS</div>
-              <div style="font-family: 'Instrument Serif', serif; font-size: 40px; line-height: 1;
-                          color: #4ADE80; letter-spacing: -0.02em; margin: 4px 0 2px;">
-                $400K
-              </div>
-              <div class="hud-value" style="font-size: 11px;">
-                <span class="green">PER SURGEON</span><br/>
-                <span class="muted">PER TRAY REFINEMENT</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="stat-tile delay-2">
-            <div class="hud-card" style="padding: 10px 12px;">
-              <div class="hud-label">UTILIZATION</div>
-              <div class="hud-value">
-                <span style="font-family: 'Instrument Serif', serif; font-size: 18px; color: #C084FC;">2.5×</span>
-                <span class="muted">17% → 42.5%</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="stat-tile delay-3">
-            <div class="hud-card" style="padding: 10px 12px;">
-              <div class="hud-label">TRAY SIZE</div>
-              <div class="hud-value">
-                <span style="font-family: 'Instrument Serif', serif; font-size: 18px; color: #C084FC;">−60%</span>
-                <span class="muted">100 → 40</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-    <!-- ========== CAPTIONS ========== -->
-    <div class="caption-row">
-      <div class="caption beat-1">
-        <div class="caption-text">Every pickup. <em>Logged.</em></div>
-      </div>
-      <div class="caption beat-2">
-        <div class="caption-text">Every interaction. <em>Classified.</em></div>
-      </div>
-      <div class="caption beat-3">
-        <div class="caption-text">Every tray. <em>Refined.</em></div>
-      </div>
-      <div class="caption beat-4">
-        <div class="caption-text">Every case. <em style="color: #4ADE80;">Compounds.</em></div>
-      </div>
     </div>
 
   </div>
