@@ -173,13 +173,16 @@
     filter: drop-shadow(0 20px 60px rgba(139, 92, 246, 0.15));
   }
 
+  /* Caption is pinned absolutely in a safe horizontal band that never overlaps
+     the side HUD columns. It sits between the two hud columns, centered. */
   .caption-row {
-    grid-column: 1 / -1;
-    grid-row: 3;
+    position: absolute;
+    left: 340px;
+    right: 360px;
+    bottom: 40px;
+    height: 62px;
     text-align: center;
-    min-height: 62px;
-    padding: 4px 0 6px;
-    position: relative;
+    z-index: 3;
   }
 
   .hud-card {
@@ -455,6 +458,7 @@
     }
     .left-hud  { left: 32px;  width: 240px; }
     .right-hud { right: 32px; width: 260px; }
+    .caption-row { left: 290px; right: 310px; }
     .caption-text { font-size: 32px; }
   }
 
@@ -466,6 +470,7 @@
     }
     .left-hud  { left: 24px;  width: 200px; }
     .right-hud { right: 24px; width: 200px; }
+    .caption-row { left: 240px; right: 240px; }
     .caption-text { font-size: 26px; }
     .hud-value { font-size: 11px; }
     .top-bar { font-size: 10px; }
