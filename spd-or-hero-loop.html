@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SPD-OR Sentinel — Appraiseye</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #07021a;
+    --bg-mid: #150535;
+    --purple-1: #8B5CF6;
+    --purple-2: #A855F7;
+    --purple-3: #C084FC;
+    --purple-glow: #6D28D9;
+    --purple-dim: #4C1D95;
+
+    --cyan-track: #22D3EE;
+    --amber: #F59E0B;
+    --amber-bright: #FBBF24;
+    --green-used: #4ADE80;
+    --green-glow: #16A34A;
+    --grey-unused: #4B5563;
+
+    --text-primary: #F9FAFB;
+    --text-dim: rgba(249, 250, 251, 0.6);
+    --text-mute: rgba(249, 250, 251, 0.38);
+
+    --loop: 14s;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+  }
+
+  .stage {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    aspect-ratio: 16 / 9;
+    background:
+      radial-gradient(ellipse 55% 70% at 75% 25%, rgba(139, 92, 246, 0.16), transparent 60%),
+      radial-gradient(ellipse 45% 60% at 25% 85%, rgba(168, 85, 247, 0.10), transparent 60%),
+      linear-gradient(135deg, var(--bg-deep) 0%, var(--bg-mid) 100%);
+    overflow: hidden;
+  }
+
+  .stage::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+    opacity: 0.06;
+    mix-blend-mode: overlay;
+    z-index: 100;
+  }
+
+  .stage::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(139, 92, 246, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139, 92, 246, 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    z-index: 1;
+  }
+
+  .frame {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: 280px 1fr 300px;
+    grid-template-rows: auto 1fr auto;
+    gap: 28px;
+    padding: 36px 48px 56px;
+    z-index: 2;
+  }
+
+  .top-bar {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .top-bar .brand { color: var(--purple-3); font-weight: 500; }
+  .top-bar .brand .ai { color: var(--text-primary); }
+
+  .top-bar .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .top-bar .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green-used);
+    box-shadow: 0 0 8px var(--green-used);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .left-hud, .right-hud {
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-self: center;
+  }
+
+  .left-hud { grid-column: 1; }
+  .right-hud { grid-column: 3; }
+
+  /* Beat cards in the HUD columns share a single absolutely-positioned slot,
+     so only the visible beat's card consumes visual space. Children anchor
+     to top-left of the slot so single-card beats don't stretch vertically. */
+  .hud-beat-slot {
+    position: relative;
+    min-height: 118px;
+  }
+  .hud-beat-slot > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+
+  /* Right HUD's beat-4 stack is taller (three stat tiles), so give its slot more height */
+  .right-hud .hud-beat-slot {
+    min-height: 280px;
+  }
+
+  .tray-wrap {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .tray-svg {
+    width: 100%;
+    max-width: 880px;
+    height: auto;
+    filter: drop-shadow(0 20px 60px rgba(139, 92, 246, 0.15));
+  }
+
+  .caption-row {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    text-align: center;
+    min-height: 88px;
+    padding: 8px 0 12px;
+    position: relative;
+  }
+
+  .hud-card {
+    background: rgba(7, 2, 26, 0.6);
+    border: 1px solid rgba(139, 92, 246, 0.22);
+    border-radius: 6px;
+    padding: 12px 14px;
+    backdrop-filter: blur(8px);
+    position: relative;
+  }
+
+  .hud-card::before, .hud-card::after {
+    content: '';
+    position: absolute;
+    width: 8px; height: 8px;
+    border: 1px solid var(--purple-2);
+  }
+  .hud-card::before {
+    top: -1px; left: -1px;
+    border-right: none; border-bottom: none;
+  }
+  .hud-card::after {
+    bottom: -1px; right: -1px;
+    border-left: none; border-top: none;
+  }
+
+  .hud-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .hud-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-primary);
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+  }
+
+  .hud-value .muted { color: var(--text-mute); }
+  .hud-value .accent { color: var(--purple-3); }
+  .hud-value .amber { color: var(--amber-bright); }
+  .hud-value .green { color: var(--green-used); }
+  .hud-value .cyan { color: var(--cyan-track); }
+
+  /* ========== BEAT VISIBILITY ========== */
+
+  .beat-1 { animation: beat-1-vis var(--loop) linear infinite; opacity: 0; }
+  @keyframes beat-1-vis {
+    0%   { opacity: 0; }
+    3%   { opacity: 1; }
+    22%  { opacity: 1; }
+    25%  { opacity: 0; }
+    100% { opacity: 0; }
+  }
+
+  .beat-2 { animation: beat-2-vis var(--loop) linear infinite; opacity: 0; }
+  @keyframes beat-2-vis {
+    0%,  25% { opacity: 0; }
+    28%      { opacity: 1; }
+    47%      { opacity: 1; }
+    50%      { opacity: 0; }
+    100%     { opacity: 0; }
+  }
+
+  .beat-3 { animation: beat-3-vis var(--loop) linear infinite; opacity: 0; }
+  @keyframes beat-3-vis {
+    0%,  50% { opacity: 0; }
+    53%      { opacity: 1; }
+    72%      { opacity: 1; }
+    75%      { opacity: 0; }
+    100%     { opacity: 0; }
+  }
+
+  .beat-4 { animation: beat-4-vis var(--loop) linear infinite; opacity: 0; }
+  @keyframes beat-4-vis {
+    0%,  75% { opacity: 0; }
+    78%      { opacity: 1; }
+    97%      { opacity: 1; }
+    100%     { opacity: 0; }
+  }
+
+  /* ========== CAPTIONS ========== */
+
+  .caption {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .caption-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    color: var(--purple-3);
+    text-transform: uppercase;
+  }
+
+  .caption-text {
+    font-family: 'Instrument Serif', serif;
+    font-size: 36px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    line-height: 1.1;
+  }
+
+  .caption-text em { font-style: italic; color: var(--purple-3); }
+
+  .caption.beat-1 { animation: cap-1 var(--loop) ease-out infinite; }
+  .caption.beat-2 { animation: cap-2 var(--loop) ease-out infinite; }
+  .caption.beat-3 { animation: cap-3 var(--loop) ease-out infinite; }
+  .caption.beat-4 { animation: cap-4 var(--loop) ease-out infinite; }
+
+  @keyframes cap-1 {
+    0%, 15%    { opacity: 0; transform: translateY(8px); }
+    20%, 23%   { opacity: 1; transform: translateY(0); }
+    25%, 100%  { opacity: 0; transform: translateY(-4px); }
+  }
+  @keyframes cap-2 {
+    0%, 40%    { opacity: 0; transform: translateY(8px); }
+    45%, 48%   { opacity: 1; transform: translateY(0); }
+    50%, 100%  { opacity: 0; transform: translateY(-4px); }
+  }
+  @keyframes cap-3 {
+    0%, 63%    { opacity: 0; transform: translateY(8px); }
+    68%, 73%   { opacity: 1; transform: translateY(0); }
+    75%, 100%  { opacity: 0; transform: translateY(-4px); }
+  }
+  @keyframes cap-4 {
+    0%, 88%    { opacity: 0; transform: translateY(8px); }
+    93%, 97%   { opacity: 1; transform: translateY(0); }
+    100%       { opacity: 0; transform: translateY(-4px); }
+  }
+
+  /* ========== INSTRUMENT DOTS ========== */
+
+  .dot-tray-frame {
+    fill: rgba(139, 92, 246, 0.04);
+    stroke: rgba(139, 92, 246, 0.25);
+    stroke-width: 1.2;
+  }
+
+  .inst-dot {
+    fill: var(--purple-1);
+    stroke: var(--purple-2);
+    stroke-width: 0.6;
+  }
+
+  .inst-dot-used {
+    fill: var(--green-used);
+    stroke: var(--green-glow);
+    stroke-width: 0.6;
+  }
+
+  .inst-dot-unused {
+    fill: var(--grey-unused);
+    stroke: rgba(107, 114, 128, 0.5);
+    stroke-width: 0.5;
+    opacity: 0.7;
+  }
+
+  /* Touch-event flash — children of a beat-1 parent, so they inherit visibility */
+  .touch-pulse {
+    animation: touch-flash 1.2s ease-out infinite;
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+  @keyframes touch-flash {
+    0%   { opacity: 0; transform: scale(1); }
+    20%  { opacity: 1; transform: scale(2.2); }
+    100% { opacity: 0; transform: scale(3); }
+  }
+
+  /* Beat 2: classification staggered reveal */
+  .classify-stagger {
+    animation: classify-reveal var(--loop) ease-out infinite;
+    opacity: 0;
+  }
+  @keyframes classify-reveal {
+    0%, 28%   { opacity: 0; transform: scale(0.7); }
+    34%       { opacity: 1; transform: scale(1); }
+    47%       { opacity: 1; transform: scale(1); }
+    50%, 100% { opacity: 0; transform: scale(1); }
+  }
+
+  /* Beat 3: headline rise */
+  .insight-block {
+    animation: insight-rise var(--loop) ease-out infinite;
+    opacity: 0;
+  }
+  @keyframes insight-rise {
+    0%, 53%   { opacity: 0; transform: translateY(12px); }
+    58%, 72%  { opacity: 1; transform: translateY(0); }
+    75%, 100% { opacity: 0; transform: translateY(-6px); }
+  }
+
+  /* Beat 3: bar draw */
+  .bar-reveal {
+    animation: bar-draw var(--loop) ease-out infinite;
+  }
+  @keyframes bar-draw {
+    0%, 58%   { transform: scaleX(0); }
+    66%       { transform: scaleX(1); }
+    72%       { transform: scaleX(1); }
+    75%, 100% { transform: scaleX(0); }
+  }
+
+  /* Beat 4: stat tile cascade (child of .beat-4 parent, uses its own animation) */
+  .stat-tile {
+    animation: stat-cascade var(--loop) ease-out infinite;
+    opacity: 0;
+  }
+  @keyframes stat-cascade {
+    0%, 78%   { opacity: 0; transform: translateY(10px); }
+    85%       { opacity: 1; transform: translateY(0); }
+    97%       { opacity: 1; transform: translateY(0); }
+    100%      { opacity: 0; transform: translateY(10px); }
+  }
+
+  .stat-tile.delay-1 { animation-delay: 0.15s; }
+  .stat-tile.delay-2 { animation-delay: 0.35s; }
+  .stat-tile.delay-3 { animation-delay: 0.55s; }
+
+  /* ========== PROGRESS ========== */
+
+  .progress-track {
+    position: absolute;
+    bottom: 20px;
+    left: 48px;
+    right: 48px;
+    height: 2px;
+    background: rgba(139, 92, 246, 0.15);
+    z-index: 3;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, var(--purple-1), var(--purple-3));
+    animation: progress-fill var(--loop) linear infinite;
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.6);
+  }
+  @keyframes progress-fill {
+    0%   { width: 0; }
+    100% { width: 100%; }
+  }
+
+  .progress-ticks {
+    position: absolute;
+    top: -4px;
+    left: 0;
+    right: 0;
+    height: 10px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+  .progress-ticks span {
+    width: 1px;
+    height: 10px;
+    background: rgba(139, 92, 246, 0.4);
+  }
+
+  @media (max-width: 1100px) {
+    .frame {
+      grid-template-columns: 240px 1fr 260px;
+      padding: 28px 32px 52px;
+      gap: 20px;
+    }
+    .caption-text { font-size: 32px; }
+  }
+
+  @media (max-width: 900px) {
+    .frame {
+      grid-template-columns: 200px 1fr 200px;
+      padding: 24px 24px 48px;
+      gap: 16px;
+    }
+    .caption-text { font-size: 26px; }
+    .hud-value { font-size: 11px; }
+    .top-bar { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <div class="frame">
+
+    <!-- ========== TOP BAR ========== -->
+    <div class="top-bar">
+      <div class="brand">APPR<span class="ai">AI</span>SEYE · SPD-OR SENTINEL</div>
+      <div class="status-indicator">
+        <span class="dot"></span>
+        <span>LIVE · CONTINUOUS MONITORING</span>
+      </div>
+    </div>
+
+    <!-- ========== LEFT HUD ========== -->
+    <div class="left-hud">
+
+      <!-- Persistent procedure context -->
+      <div class="hud-card">
+        <div class="hud-label">PROCEDURE</div>
+        <div class="hud-value">
+          <span class="accent">OR 4</span> · ORTHO SPINE<br/>
+          PROC <span class="accent">#1472</span><br/>
+          <span class="muted" id="procClock">14:08:22</span>
+        </div>
+      </div>
+
+      <!-- Beat-specific cards share one absolutely-positioned slot -->
+      <div class="hud-beat-slot">
+
+        <!-- Beat 1: case in progress -->
+        <div class="hud-card beat-1">
+          <div class="hud-label">CASE IN PROGRESS</div>
+          <div class="hud-value">
+            <span class="muted">TRAY TOTAL</span> <span class="accent">100</span><br/>
+            <span class="muted">TOUCH EVENTS</span> <span class="cyan" id="touchCount">142</span><br/>
+            <span class="muted">ELAPSED</span> <span class="accent" id="elapsed">01:18:47</span>
+          </div>
+        </div>
+
+        <!-- Beat 2: post-case analysis -->
+        <div class="hud-card beat-2">
+          <div class="hud-label">POST-CASE ANALYSIS</div>
+          <div class="hud-value">
+            <span class="green">USED</span> <span class="green">17</span><br/>
+            <span class="muted">UNUSED</span> <span class="muted">83</span><br/>
+            <span class="muted">UTILIZATION</span> <span class="amber">17%</span>
+          </div>
+        </div>
+
+        <!-- Beat 3: refinement draft -->
+        <div class="hud-card beat-3" style="border-color: rgba(168, 85, 247, 0.5); box-shadow: 0 0 16px rgba(168, 85, 247, 0.15);">
+          <div class="hud-label" style="color: var(--purple-3);">REFINEMENT DRAFT</div>
+          <div class="hud-value">
+            <span class="muted">BASELINE</span> <span class="muted">100</span><br/>
+            <span class="muted">RECOMMENDED</span> <span class="accent">40</span><br/>
+            <span class="muted">FLAGGED</span> <span class="amber">60</span>
+          </div>
+        </div>
+
+        <!-- Beat 4: tray refined -->
+        <div class="hud-card beat-4" style="border-color: rgba(74, 222, 128, 0.5); box-shadow: 0 0 16px rgba(74, 222, 128, 0.15);">
+          <div class="hud-label" style="color: var(--green-used);">TRAY REFINED</div>
+          <div class="hud-value">
+            <span class="green">40-PIECE SET</span><br/>
+            <span class="muted">APPROVED · SPD</span><br/>
+            <span class="muted">ROLLING FORWARD</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ========== CENTER: TRAY SVG ========== -->
+    <div class="tray-wrap">
+
+      <svg class="tray-svg" viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="greenGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1.5"/>
+            <feMerge>
+              <feMergeNode/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+
+        <!-- ===== BEAT 1 ===== -->
+        <g class="beat-1">
+          <rect class="dot-tray-frame" x="20" y="30" width="350" height="360" rx="8"/>
+          <text x="30" y="22" font-family="JetBrains Mono, monospace" font-size="8"
+                fill="rgba(139,92,246,0.55)" letter-spacing="2">
+            BACK_TABLE · 50 INSTRUMENTS
+          </text>
+          <polyline points="30,40 30,30 40,30" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+          <polyline points="350,30 360,30 360,40" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+          <polyline points="30,380 30,390 40,390" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+          <polyline points="350,390 360,390 360,380" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+
+          <rect class="dot-tray-frame" x="390" y="30" width="350" height="360" rx="8"/>
+          <text x="400" y="22" font-family="JetBrains Mono, monospace" font-size="8"
+                fill="rgba(139,92,246,0.55)" letter-spacing="2">
+            MAYO_STAND · 50 INSTRUMENTS
+          </text>
+          <polyline points="400,40 400,30 410,30" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+          <polyline points="720,30 730,30 730,40" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+          <polyline points="400,380 400,390 410,390" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+          <polyline points="720,390 730,390 730,380" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+
+          <!-- 100 purple dots, 50 per tray, 10 cols × 5 rows each -->
+          <g>
+            <!-- Left tray -->
+            <circle cx="52"  cy="70"  r="5" class="inst-dot"/>
+            <circle cx="84"  cy="70"  r="5" class="inst-dot"/>
+            <circle cx="116" cy="70"  r="5" class="inst-dot"/>
+            <circle cx="148" cy="70"  r="5" class="inst-dot"/>
+            <circle cx="180" cy="70"  r="5" class="inst-dot"/>
+            <circle cx="212" cy="70"  r="5" class="inst-dot"/>
+            <circle cx="244" cy="70"  r="5" class="inst-dot"/>
+            <circle cx="276" cy="70"  r="5" class="inst-dot"/>
+            <circle cx="308" cy="70"  r="5" class="inst-dot"/>
+            <circle cx="340" cy="70"  r="5" class="inst-dot"/>
+
+            <circle cx="52"  cy="140" r="5" class="inst-dot"/>
+            <circle cx="84"  cy="140" r="5" class="inst-dot"/>
+            <circle cx="116" cy="140" r="5" class="inst-dot"/>
+            <circle cx="148" cy="140" r="5" class="inst-dot"/>
+            <circle cx="180" cy="140" r="5" class="inst-dot"/>
+            <circle cx="212" cy="140" r="5" class="inst-dot"/>
+            <circle cx="244" cy="140" r="5" class="inst-dot"/>
+            <circle cx="276" cy="140" r="5" class="inst-dot"/>
+            <circle cx="308" cy="140" r="5" class="inst-dot"/>
+            <circle cx="340" cy="140" r="5" class="inst-dot"/>
+
+            <circle cx="52"  cy="210" r="5" class="inst-dot"/>
+            <circle cx="84"  cy="210" r="5" class="inst-dot"/>
+            <circle cx="116" cy="210" r="5" class="inst-dot"/>
+            <circle cx="148" cy="210" r="5" class="inst-dot"/>
+            <circle cx="180" cy="210" r="5" class="inst-dot"/>
+            <circle cx="212" cy="210" r="5" class="inst-dot"/>
+            <circle cx="244" cy="210" r="5" class="inst-dot"/>
+            <circle cx="276" cy="210" r="5" class="inst-dot"/>
+            <circle cx="308" cy="210" r="5" class="inst-dot"/>
+            <circle cx="340" cy="210" r="5" class="inst-dot"/>
+
+            <circle cx="52"  cy="280" r="5" class="inst-dot"/>
+            <circle cx="84"  cy="280" r="5" class="inst-dot"/>
+            <circle cx="116" cy="280" r="5" class="inst-dot"/>
+            <circle cx="148" cy="280" r="5" class="inst-dot"/>
+            <circle cx="180" cy="280" r="5" class="inst-dot"/>
+            <circle cx="212" cy="280" r="5" class="inst-dot"/>
+            <circle cx="244" cy="280" r="5" class="inst-dot"/>
+            <circle cx="276" cy="280" r="5" class="inst-dot"/>
+            <circle cx="308" cy="280" r="5" class="inst-dot"/>
+            <circle cx="340" cy="280" r="5" class="inst-dot"/>
+
+            <circle cx="52"  cy="350" r="5" class="inst-dot"/>
+            <circle cx="84"  cy="350" r="5" class="inst-dot"/>
+            <circle cx="116" cy="350" r="5" class="inst-dot"/>
+            <circle cx="148" cy="350" r="5" class="inst-dot"/>
+            <circle cx="180" cy="350" r="5" class="inst-dot"/>
+            <circle cx="212" cy="350" r="5" class="inst-dot"/>
+            <circle cx="244" cy="350" r="5" class="inst-dot"/>
+            <circle cx="276" cy="350" r="5" class="inst-dot"/>
+            <circle cx="308" cy="350" r="5" class="inst-dot"/>
+            <circle cx="340" cy="350" r="5" class="inst-dot"/>
+
+            <!-- Right tray -->
+            <circle cx="422" cy="70"  r="5" class="inst-dot"/>
+            <circle cx="454" cy="70"  r="5" class="inst-dot"/>
+            <circle cx="486" cy="70"  r="5" class="inst-dot"/>
+            <circle cx="518" cy="70"  r="5" class="inst-dot"/>
+            <circle cx="550" cy="70"  r="5" class="inst-dot"/>
+            <circle cx="582" cy="70"  r="5" class="inst-dot"/>
+            <circle cx="614" cy="70"  r="5" class="inst-dot"/>
+            <circle cx="646" cy="70"  r="5" class="inst-dot"/>
+            <circle cx="678" cy="70"  r="5" class="inst-dot"/>
+            <circle cx="710" cy="70"  r="5" class="inst-dot"/>
+
+            <circle cx="422" cy="140" r="5" class="inst-dot"/>
+            <circle cx="454" cy="140" r="5" class="inst-dot"/>
+            <circle cx="486" cy="140" r="5" class="inst-dot"/>
+            <circle cx="518" cy="140" r="5" class="inst-dot"/>
+            <circle cx="550" cy="140" r="5" class="inst-dot"/>
+            <circle cx="582" cy="140" r="5" class="inst-dot"/>
+            <circle cx="614" cy="140" r="5" class="inst-dot"/>
+            <circle cx="646" cy="140" r="5" class="inst-dot"/>
+            <circle cx="678" cy="140" r="5" class="inst-dot"/>
+            <circle cx="710" cy="140" r="5" class="inst-dot"/>
+
+            <circle cx="422" cy="210" r="5" class="inst-dot"/>
+            <circle cx="454" cy="210" r="5" class="inst-dot"/>
+            <circle cx="486" cy="210" r="5" class="inst-dot"/>
+            <circle cx="518" cy="210" r="5" class="inst-dot"/>
+            <circle cx="550" cy="210" r="5" class="inst-dot"/>
+            <circle cx="582" cy="210" r="5" class="inst-dot"/>
+            <circle cx="614" cy="210" r="5" class="inst-dot"/>
+            <circle cx="646" cy="210" r="5" class="inst-dot"/>
+            <circle cx="678" cy="210" r="5" class="inst-dot"/>
+            <circle cx="710" cy="210" r="5" class="inst-dot"/>
+
+            <circle cx="422" cy="280" r="5" class="inst-dot"/>
+            <circle cx="454" cy="280" r="5" class="inst-dot"/>
+            <circle cx="486" cy="280" r="5" class="inst-dot"/>
+            <circle cx="518" cy="280" r="5" class="inst-dot"/>
+            <circle cx="550" cy="280" r="5" class="inst-dot"/>
+            <circle cx="582" cy="280" r="5" class="inst-dot"/>
+            <circle cx="614" cy="280" r="5" class="inst-dot"/>
+            <circle cx="646" cy="280" r="5" class="inst-dot"/>
+            <circle cx="678" cy="280" r="5" class="inst-dot"/>
+            <circle cx="710" cy="280" r="5" class="inst-dot"/>
+
+            <circle cx="422" cy="350" r="5" class="inst-dot"/>
+            <circle cx="454" cy="350" r="5" class="inst-dot"/>
+            <circle cx="486" cy="350" r="5" class="inst-dot"/>
+            <circle cx="518" cy="350" r="5" class="inst-dot"/>
+            <circle cx="550" cy="350" r="5" class="inst-dot"/>
+            <circle cx="582" cy="350" r="5" class="inst-dot"/>
+            <circle cx="614" cy="350" r="5" class="inst-dot"/>
+            <circle cx="646" cy="350" r="5" class="inst-dot"/>
+            <circle cx="678" cy="350" r="5" class="inst-dot"/>
+            <circle cx="710" cy="350" r="5" class="inst-dot"/>
+          </g>
+
+          <!-- Touch-event pulses — cyan rings, staggered across 10 positions -->
+          <g fill="none" stroke="#22D3EE" stroke-width="1.5">
+            <circle cx="116" cy="140" r="5" class="touch-pulse" style="animation-delay: 0.1s"/>
+            <circle cx="244" cy="210" r="5" class="touch-pulse" style="animation-delay: 0.4s"/>
+            <circle cx="550" cy="140" r="5" class="touch-pulse" style="animation-delay: 0.7s"/>
+            <circle cx="180" cy="280" r="5" class="touch-pulse" style="animation-delay: 1.0s"/>
+            <circle cx="646" cy="70"  r="5" class="touch-pulse" style="animation-delay: 1.3s"/>
+            <circle cx="308" cy="350" r="5" class="touch-pulse" style="animation-delay: 1.6s"/>
+            <circle cx="486" cy="210" r="5" class="touch-pulse" style="animation-delay: 1.9s"/>
+            <circle cx="84"  cy="210" r="5" class="touch-pulse" style="animation-delay: 2.2s"/>
+            <circle cx="710" cy="280" r="5" class="touch-pulse" style="animation-delay: 2.5s"/>
+            <circle cx="422" cy="350" r="5" class="touch-pulse" style="animation-delay: 2.8s"/>
+          </g>
+
+          <text x="730" y="410" text-anchor="end"
+                font-family="JetBrains Mono, monospace" font-size="8"
+                fill="rgba(139,92,246,0.55)" letter-spacing="2">
+            APPRAISEYE CV-v4.2 · TRACKING
+          </text>
+        </g>
+
+        <!-- ===== BEAT 2 ===== -->
+        <g class="beat-2">
+          <rect class="dot-tray-frame" x="20" y="30" width="350" height="360" rx="8"/>
+          <text x="30" y="22" font-family="JetBrains Mono, monospace" font-size="8"
+                fill="rgba(139,92,246,0.55)" letter-spacing="2">
+            BACK_TABLE · 50
+          </text>
+          <polyline points="30,40 30,30 40,30" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+          <polyline points="350,30 360,30 360,40" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+          <polyline points="30,380 30,390 40,390" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+          <polyline points="350,390 360,390 360,380" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+
+          <rect class="dot-tray-frame" x="390" y="30" width="350" height="360" rx="8"/>
+          <text x="400" y="22" font-family="JetBrains Mono, monospace" font-size="8"
+                fill="rgba(139,92,246,0.55)" letter-spacing="2">
+            MAYO_STAND · 50
+          </text>
+          <polyline points="400,40 400,30 410,30" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+          <polyline points="720,30 730,30 730,40" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+          <polyline points="400,380 400,390 410,390" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+          <polyline points="720,390 730,390 730,380" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+
+          <!-- UNUSED group (83 dots, everything except the 17 used positions) -->
+          <g class="classify-stagger">
+            <!-- Left tray unused: 44 dots (50 - 6 used) -->
+            <circle cx="52"  cy="70"  r="5" class="inst-dot-unused"/>
+            <circle cx="116" cy="70"  r="5" class="inst-dot-unused"/>
+            <circle cx="148" cy="70"  r="5" class="inst-dot-unused"/>
+            <circle cx="180" cy="70"  r="5" class="inst-dot-unused"/>
+            <circle cx="212" cy="70"  r="5" class="inst-dot-unused"/>
+            <circle cx="244" cy="70"  r="5" class="inst-dot-unused"/>
+            <circle cx="276" cy="70"  r="5" class="inst-dot-unused"/>
+            <circle cx="308" cy="70"  r="5" class="inst-dot-unused"/>
+            <circle cx="340" cy="70"  r="5" class="inst-dot-unused"/>
+
+            <circle cx="52"  cy="140" r="5" class="inst-dot-unused"/>
+            <circle cx="84"  cy="140" r="5" class="inst-dot-unused"/>
+            <circle cx="116" cy="140" r="5" class="inst-dot-unused"/>
+            <circle cx="148" cy="140" r="5" class="inst-dot-unused"/>
+            <circle cx="180" cy="140" r="5" class="inst-dot-unused"/>
+            <circle cx="244" cy="140" r="5" class="inst-dot-unused"/>
+            <circle cx="276" cy="140" r="5" class="inst-dot-unused"/>
+            <circle cx="308" cy="140" r="5" class="inst-dot-unused"/>
+            <circle cx="340" cy="140" r="5" class="inst-dot-unused"/>
+
+            <circle cx="52"  cy="210" r="5" class="inst-dot-unused"/>
+            <circle cx="84"  cy="210" r="5" class="inst-dot-unused"/>
+            <circle cx="148" cy="210" r="5" class="inst-dot-unused"/>
+            <circle cx="180" cy="210" r="5" class="inst-dot-unused"/>
+            <circle cx="212" cy="210" r="5" class="inst-dot-unused"/>
+            <circle cx="244" cy="210" r="5" class="inst-dot-unused"/>
+            <circle cx="276" cy="210" r="5" class="inst-dot-unused"/>
+            <circle cx="308" cy="210" r="5" class="inst-dot-unused"/>
+            <circle cx="340" cy="210" r="5" class="inst-dot-unused"/>
+
+            <circle cx="52"  cy="280" r="5" class="inst-dot-unused"/>
+            <circle cx="84"  cy="280" r="5" class="inst-dot-unused"/>
+            <circle cx="116" cy="280" r="5" class="inst-dot-unused"/>
+            <circle cx="148" cy="280" r="5" class="inst-dot-unused"/>
+            <circle cx="212" cy="280" r="5" class="inst-dot-unused"/>
+            <circle cx="244" cy="280" r="5" class="inst-dot-unused"/>
+            <circle cx="308" cy="280" r="5" class="inst-dot-unused"/>
+            <circle cx="340" cy="280" r="5" class="inst-dot-unused"/>
+
+            <circle cx="52"  cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="84"  cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="116" cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="148" cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="180" cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="212" cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="244" cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="276" cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="340" cy="350" r="5" class="inst-dot-unused"/>
+
+            <!-- Right tray unused: 39 dots (50 - 11 used) -->
+            <circle cx="422" cy="70"  r="5" class="inst-dot-unused"/>
+            <circle cx="486" cy="70"  r="5" class="inst-dot-unused"/>
+            <circle cx="518" cy="70"  r="5" class="inst-dot-unused"/>
+            <circle cx="582" cy="70"  r="5" class="inst-dot-unused"/>
+            <circle cx="646" cy="70"  r="5" class="inst-dot-unused"/>
+            <circle cx="678" cy="70"  r="5" class="inst-dot-unused"/>
+            <circle cx="710" cy="70"  r="5" class="inst-dot-unused"/>
+
+            <circle cx="422" cy="140" r="5" class="inst-dot-unused"/>
+            <circle cx="454" cy="140" r="5" class="inst-dot-unused"/>
+            <circle cx="550" cy="140" r="5" class="inst-dot-unused"/>
+            <circle cx="582" cy="140" r="5" class="inst-dot-unused"/>
+            <circle cx="614" cy="140" r="5" class="inst-dot-unused"/>
+            <circle cx="646" cy="140" r="5" class="inst-dot-unused"/>
+            <circle cx="710" cy="140" r="5" class="inst-dot-unused"/>
+
+            <circle cx="454" cy="210" r="5" class="inst-dot-unused"/>
+            <circle cx="518" cy="210" r="5" class="inst-dot-unused"/>
+            <circle cx="550" cy="210" r="5" class="inst-dot-unused"/>
+            <circle cx="614" cy="210" r="5" class="inst-dot-unused"/>
+            <circle cx="678" cy="210" r="5" class="inst-dot-unused"/>
+            <circle cx="710" cy="210" r="5" class="inst-dot-unused"/>
+
+            <circle cx="422" cy="280" r="5" class="inst-dot-unused"/>
+            <circle cx="454" cy="280" r="5" class="inst-dot-unused"/>
+            <circle cx="486" cy="280" r="5" class="inst-dot-unused"/>
+            <circle cx="518" cy="280" r="5" class="inst-dot-unused"/>
+            <circle cx="582" cy="280" r="5" class="inst-dot-unused"/>
+            <circle cx="614" cy="280" r="5" class="inst-dot-unused"/>
+            <circle cx="646" cy="280" r="5" class="inst-dot-unused"/>
+            <circle cx="678" cy="280" r="5" class="inst-dot-unused"/>
+            <circle cx="710" cy="280" r="5" class="inst-dot-unused"/>
+
+            <circle cx="422" cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="454" cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="486" cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="518" cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="550" cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="582" cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="614" cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="646" cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="678" cy="350" r="5" class="inst-dot-unused"/>
+            <circle cx="710" cy="350" r="5" class="inst-dot-unused"/>
+          </g>
+
+          <!-- USED group (17 dots): 6 on left tray, 11 on right -->
+          <g class="classify-stagger" style="animation-delay: 0.4s;" filter="url(#greenGlow)">
+            <circle cx="84"  cy="70"  r="5.5" class="inst-dot-used"/>
+            <circle cx="212" cy="140" r="5.5" class="inst-dot-used"/>
+            <circle cx="116" cy="210" r="5.5" class="inst-dot-used"/>
+            <circle cx="180" cy="280" r="5.5" class="inst-dot-used"/>
+            <circle cx="276" cy="280" r="5.5" class="inst-dot-used"/>
+            <circle cx="308" cy="350" r="5.5" class="inst-dot-used"/>
+
+            <circle cx="454" cy="70"  r="5.5" class="inst-dot-used"/>
+            <circle cx="550" cy="70"  r="5.5" class="inst-dot-used"/>
+            <circle cx="614" cy="70"  r="5.5" class="inst-dot-used"/>
+            <circle cx="486" cy="140" r="5.5" class="inst-dot-used"/>
+            <circle cx="518" cy="140" r="5.5" class="inst-dot-used"/>
+            <circle cx="678" cy="140" r="5.5" class="inst-dot-used"/>
+            <circle cx="422" cy="210" r="5.5" class="inst-dot-used"/>
+            <circle cx="486" cy="210" r="5.5" class="inst-dot-used"/>
+            <circle cx="582" cy="210" r="5.5" class="inst-dot-used"/>
+            <circle cx="646" cy="210" r="5.5" class="inst-dot-used"/>
+            <circle cx="550" cy="280" r="5.5" class="inst-dot-used"/>
+          </g>
+
+          <!-- Legend -->
+          <g class="classify-stagger" style="animation-delay: 0.8s;">
+            <g transform="translate(20, 405)">
+              <circle cx="6" cy="0" r="4" class="inst-dot-used"/>
+              <text x="16" y="3" font-family="JetBrains Mono, monospace" font-size="9"
+                    fill="#4ADE80" letter-spacing="1.5">USED · 17</text>
+            </g>
+            <g transform="translate(130, 405)">
+              <circle cx="6" cy="0" r="4" class="inst-dot-unused"/>
+              <text x="16" y="3" font-family="JetBrains Mono, monospace" font-size="9"
+                    fill="rgba(249, 250, 251, 0.38)" letter-spacing="1.5">UNUSED · 83</text>
+            </g>
+          </g>
+        </g>
+
+        <!-- ===== BEAT 3 ===== -->
+        <g class="beat-3">
+          <!-- Headline block -->
+          <g class="insight-block" transform="translate(380, 90)">
+            <text x="0" y="0" text-anchor="middle"
+                  font-family="JetBrains Mono, monospace" font-size="10"
+                  fill="#C084FC" letter-spacing="3">
+              CASE CLOSED · ANALYSIS READY
+            </text>
+            <text x="0" y="48" text-anchor="middle"
+                  font-family="Instrument Serif, serif" font-size="42"
+                  fill="#F9FAFB" letter-spacing="-0.02em">
+              100 instruments opened.
+            </text>
+            <text x="0" y="100" text-anchor="middle"
+                  font-family="Instrument Serif, serif" font-size="42"
+                  fill="#F9FAFB" letter-spacing="-0.02em" font-style="italic">
+              Only <tspan fill="#4ADE80" font-style="italic">17</tspan> used.
+            </text>
+          </g>
+
+          <!-- Before/after bar -->
+          <g class="insight-block" transform="translate(380, 260)" style="animation-delay: 0.25s;">
+            <text x="0" y="0" text-anchor="middle"
+                  font-family="JetBrains Mono, monospace" font-size="10"
+                  fill="rgba(249, 250, 251, 0.38)" letter-spacing="2.5">
+              TRAY COMPOSITION · BEFORE vs AFTER
+            </text>
+
+            <!-- Baseline: 100 (340px wide = full) -->
+            <g transform="translate(-170, 24)">
+              <text x="-8" y="8" text-anchor="end"
+                    font-family="JetBrains Mono, monospace" font-size="9"
+                    fill="rgba(249, 250, 251, 0.38)" letter-spacing="1.5">BASELINE</text>
+              <rect x="0" y="0" width="340" height="12" rx="3"
+                    fill="rgba(245, 158, 11, 0.15)"/>
+              <rect x="0" y="0" width="340" height="12" rx="3" class="bar-reveal"
+                    fill="#F59E0B" style="transform-origin: left;" opacity="0.85"/>
+              <text x="348" y="10" font-family="JetBrains Mono, monospace"
+                    font-size="11" fill="#FBBF24" letter-spacing="1" font-weight="600">100</text>
+            </g>
+
+            <!-- Refined: 40 (136px wide = 40% of 340) -->
+            <g transform="translate(-170, 50)">
+              <text x="-8" y="8" text-anchor="end"
+                    font-family="JetBrains Mono, monospace" font-size="9"
+                    fill="rgba(249, 250, 251, 0.38)" letter-spacing="1.5">REFINED</text>
+              <rect x="0" y="0" width="340" height="12" rx="3"
+                    fill="rgba(139, 92, 246, 0.15)"/>
+              <rect x="0" y="0" width="136" height="12" rx="3" class="bar-reveal"
+                    fill="#A855F7" style="transform-origin: left; animation-delay: 0.15s;"/>
+              <text x="144" y="10" font-family="JetBrains Mono, monospace"
+                    font-size="11" fill="#C084FC" letter-spacing="1" font-weight="600">40</text>
+            </g>
+
+            <!-- Status line -->
+            <text x="0" y="96" text-anchor="middle"
+                  font-family="JetBrains Mono, monospace" font-size="10"
+                  fill="rgba(249, 250, 251, 0.6)" letter-spacing="1.8">
+              DRAFT SENT TO SPD · <tspan fill="#FBBF24">60 FLAGGED</tspan> · PENDING SURGEON SIGN-OFF
+            </text>
+          </g>
+        </g>
+
+        <!-- ===== BEAT 4 ===== -->
+        <g class="beat-4">
+          <!-- Single refined tray -->
+          <rect x="180" y="60" width="400" height="300" rx="10"
+                stroke="#4ADE80" stroke-width="1.5" opacity="0.85"
+                fill="rgba(74, 222, 128, 0.03)"/>
+
+          <text x="190" y="52" font-family="JetBrains Mono, monospace" font-size="9"
+                fill="#4ADE80" letter-spacing="2.5" font-weight="500">
+            REFINED_TRAY · 40 INSTRUMENTS
+          </text>
+          <text x="570" y="52" text-anchor="end"
+                font-family="JetBrains Mono, monospace" font-size="9"
+                fill="#4ADE80" letter-spacing="2.5" font-weight="500">
+            UTILIZATION · 42.5%
+          </text>
+
+          <polyline points="190,70 190,60 200,60" fill="none" stroke="#4ADE80" stroke-width="1.8"/>
+          <polyline points="570,60 580,60 580,70" fill="none" stroke="#4ADE80" stroke-width="1.8"/>
+          <polyline points="190,350 190,360 200,360" fill="none" stroke="#4ADE80" stroke-width="1.8"/>
+          <polyline points="570,360 580,360 580,350" fill="none" stroke="#4ADE80" stroke-width="1.8"/>
+
+          <!-- 40 green dots: 8 cols × 5 rows -->
+          <g filter="url(#greenGlow)">
+            <circle cx="220" cy="100" r="5.5" class="inst-dot-used"/>
+            <circle cx="266" cy="100" r="5.5" class="inst-dot-used"/>
+            <circle cx="312" cy="100" r="5.5" class="inst-dot-used"/>
+            <circle cx="358" cy="100" r="5.5" class="inst-dot-used"/>
+            <circle cx="404" cy="100" r="5.5" class="inst-dot-used"/>
+            <circle cx="450" cy="100" r="5.5" class="inst-dot-used"/>
+            <circle cx="496" cy="100" r="5.5" class="inst-dot-used"/>
+            <circle cx="542" cy="100" r="5.5" class="inst-dot-used"/>
+
+            <circle cx="220" cy="155" r="5.5" class="inst-dot-used"/>
+            <circle cx="266" cy="155" r="5.5" class="inst-dot-used"/>
+            <circle cx="312" cy="155" r="5.5" class="inst-dot-used"/>
+            <circle cx="358" cy="155" r="5.5" class="inst-dot-used"/>
+            <circle cx="404" cy="155" r="5.5" class="inst-dot-used"/>
+            <circle cx="450" cy="155" r="5.5" class="inst-dot-used"/>
+            <circle cx="496" cy="155" r="5.5" class="inst-dot-used"/>
+            <circle cx="542" cy="155" r="5.5" class="inst-dot-used"/>
+
+            <circle cx="220" cy="210" r="5.5" class="inst-dot-used"/>
+            <circle cx="266" cy="210" r="5.5" class="inst-dot-used"/>
+            <circle cx="312" cy="210" r="5.5" class="inst-dot-used"/>
+            <circle cx="358" cy="210" r="5.5" class="inst-dot-used"/>
+            <circle cx="404" cy="210" r="5.5" class="inst-dot-used"/>
+            <circle cx="450" cy="210" r="5.5" class="inst-dot-used"/>
+            <circle cx="496" cy="210" r="5.5" class="inst-dot-used"/>
+            <circle cx="542" cy="210" r="5.5" class="inst-dot-used"/>
+
+            <circle cx="220" cy="265" r="5.5" class="inst-dot-used"/>
+            <circle cx="266" cy="265" r="5.5" class="inst-dot-used"/>
+            <circle cx="312" cy="265" r="5.5" class="inst-dot-used"/>
+            <circle cx="358" cy="265" r="5.5" class="inst-dot-used"/>
+            <circle cx="404" cy="265" r="5.5" class="inst-dot-used"/>
+            <circle cx="450" cy="265" r="5.5" class="inst-dot-used"/>
+            <circle cx="496" cy="265" r="5.5" class="inst-dot-used"/>
+            <circle cx="542" cy="265" r="5.5" class="inst-dot-used"/>
+
+            <circle cx="220" cy="320" r="5.5" class="inst-dot-used"/>
+            <circle cx="266" cy="320" r="5.5" class="inst-dot-used"/>
+            <circle cx="312" cy="320" r="5.5" class="inst-dot-used"/>
+            <circle cx="358" cy="320" r="5.5" class="inst-dot-used"/>
+            <circle cx="404" cy="320" r="5.5" class="inst-dot-used"/>
+            <circle cx="450" cy="320" r="5.5" class="inst-dot-used"/>
+            <circle cx="496" cy="320" r="5.5" class="inst-dot-used"/>
+            <circle cx="542" cy="320" r="5.5" class="inst-dot-used"/>
+          </g>
+
+          <text x="380" y="395" text-anchor="middle"
+                font-family="JetBrains Mono, monospace" font-size="9"
+                fill="rgba(249, 250, 251, 0.35)" letter-spacing="2.5">
+            THOMAS JEFFERSON + MAYO CLINIC · CONTINUOUS SPD REFINEMENT
+          </text>
+        </g>
+
+      </svg>
+
+    </div>
+
+    <!-- ========== RIGHT HUD ========== -->
+    <div class="right-hud">
+
+      <div class="hud-card">
+        <div class="hud-label">SYSTEM</div>
+        <div class="hud-value">
+          <span class="accent">SPD-OR SENTINEL</span><br/>
+          <span class="muted">CV-v4.2 · LIVE</span><br/>
+          <span class="muted">NODE: OR-04-A</span>
+        </div>
+      </div>
+
+      <!-- Beat-specific cards share one absolutely-positioned slot -->
+      <div class="hud-beat-slot">
+
+        <div class="hud-card beat-1">
+          <div class="hud-label">CV PIPELINE</div>
+          <div class="hud-value">
+            <span class="muted">DETECT</span> <span class="cyan">●</span><br/>
+            <span class="muted">TRACK</span> <span class="cyan">●</span><br/>
+            <span class="muted">CLASSIFY</span> <span class="cyan">●</span>
+          </div>
+        </div>
+
+        <div class="hud-card beat-2">
+          <div class="hud-label">UTILIZATION</div>
+          <div style="font-family: 'Instrument Serif', serif; font-size: 38px;
+                      line-height: 1; color: #FBBF24;
+                      letter-spacing: -0.02em; margin: 6px 0 4px;">
+            17%
+          </div>
+          <div class="hud-value" style="font-size: 11px;">
+            <span class="muted">17 OF 100 INSTRUMENTS</span>
+          </div>
+        </div>
+
+        <div class="hud-card beat-3" style="border-color: rgba(168, 85, 247, 0.5);">
+          <div class="hud-label" style="color: #C084FC;">RECOMMENDED</div>
+          <div style="font-family: 'Instrument Serif', serif; font-size: 38px;
+                      line-height: 1; color: #C084FC;
+                      letter-spacing: -0.02em; margin: 6px 0 4px;">
+            −60%
+          </div>
+          <div class="hud-value" style="font-size: 11px;">
+            <span class="muted">100 → 40 INSTRUMENTS</span>
+          </div>
+        </div>
+
+        <!-- Beat 4: three stat tiles — parent controls visibility, children cascade -->
+        <div class="beat-4" style="display: flex; flex-direction: column; gap: 10px;">
+
+          <div class="stat-tile delay-1">
+            <div class="hud-card" style="padding: 14px 14px; border-color: rgba(74,222,128,0.5);
+                                          background: linear-gradient(135deg, rgba(74,222,128,0.08), rgba(139,92,246,0.04));">
+              <div class="hud-label" style="color: #4ADE80;">ANNUAL SAVINGS</div>
+              <div style="font-family: 'Instrument Serif', serif; font-size: 40px; line-height: 1;
+                          color: #4ADE80; letter-spacing: -0.02em; margin: 4px 0 2px;">
+                $400K
+              </div>
+              <div class="hud-value" style="font-size: 11px;">
+                <span class="green">PER SURGEON</span><br/>
+                <span class="muted">PER TRAY REFINEMENT</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-tile delay-2">
+            <div class="hud-card" style="padding: 10px 12px;">
+              <div class="hud-label">UTILIZATION</div>
+              <div class="hud-value">
+                <span style="font-family: 'Instrument Serif', serif; font-size: 18px; color: #C084FC;">2.5×</span>
+                <span class="muted">17% → 42.5%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-tile delay-3">
+            <div class="hud-card" style="padding: 10px 12px;">
+              <div class="hud-label">TRAY SIZE</div>
+              <div class="hud-value">
+                <span style="font-family: 'Instrument Serif', serif; font-size: 18px; color: #C084FC;">−60%</span>
+                <span class="muted">100 → 40</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ========== CAPTIONS ========== -->
+    <div class="caption-row">
+      <div class="caption beat-1">
+        <div class="caption-eyebrow">BEAT 01 · CASE IN PROGRESS</div>
+        <div class="caption-text">Every pickup. <em>Logged.</em></div>
+      </div>
+      <div class="caption beat-2">
+        <div class="caption-eyebrow">BEAT 02 · POST-CASE ANALYSIS</div>
+        <div class="caption-text">Every interaction. <em>Classified.</em></div>
+      </div>
+      <div class="caption beat-3">
+        <div class="caption-eyebrow">BEAT 03 · REFINEMENT DRAFT</div>
+        <div class="caption-text">Every tray. <em>Refined.</em></div>
+      </div>
+      <div class="caption beat-4">
+        <div class="caption-eyebrow" style="color: #4ADE80;">BEAT 04 · MAXIMIZED UTILIZATION</div>
+        <div class="caption-text">Every case. <em style="color: #4ADE80;">Compounds.</em></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Progress ticker -->
+  <div class="progress-track">
+    <div class="progress-fill"></div>
+    <div class="progress-ticks">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const LOOP_MS = 14000;
+
+  function fmtTime(sec) {
+    sec = Math.floor(sec) % 86400;
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    return String(h).padStart(2, '0') + ':' +
+           String(m).padStart(2, '0') + ':' +
+           String(s).padStart(2, '0');
+  }
+
+  let startTime = performance.now();
+
+  function tick(now) {
+    const t = (now - startTime) % LOOP_MS;
+
+    const clockEl = document.getElementById('procClock');
+    if (clockEl) {
+      if (t < 3500) {
+        clockEl.textContent = fmtTime(14*3600 + 8*60 + 22 + t/100);
+      } else if (t < 7000) {
+        clockEl.textContent = fmtTime(15*3600 + 26*60 + 45 + (t-3500)/500);
+      } else if (t < 10500) {
+        clockEl.textContent = fmtTime(15*3600 + 28*60 + 12 + (t-7000)/500);
+      } else {
+        clockEl.textContent = '15:29:47';
+      }
+    }
+
+    const touchEl = document.getElementById('touchCount');
+    if (touchEl && t < 3500) {
+      touchEl.textContent = 142 + Math.floor((t / 3500) * 25);
+    }
+
+    const elapsedEl = document.getElementById('elapsed');
+    if (elapsedEl && t < 3500) {
+      elapsedEl.textContent = fmtTime(1*3600 + 18*60 + 47 + Math.floor(t / 100));
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
+</script>
+
+</body>
+</html>
