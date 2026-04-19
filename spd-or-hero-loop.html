@@ -122,24 +122,25 @@
     50% { opacity: 0.4; }
   }
 
+  /* HUD columns are pinned absolutely to the top of the stage so they never
+     get pushed down by grid-row stretching. Heights are content-driven. */
   .left-hud, .right-hud {
-    grid-row: 2;
+    position: absolute;
+    top: 56px;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    align-self: start;
-    margin-bottom: auto;
+    z-index: 3;
   }
-
-  .left-hud { grid-column: 1; }
-  .right-hud { grid-column: 3; }
+  .left-hud  { left: 40px;  width: 280px; }
+  .right-hud { right: 40px; width: 300px; }
 
   /* Beat cards in the HUD columns share a single absolutely-positioned slot,
      so only the visible beat's card consumes visual space. Children anchor
      to top-left of the slot so single-card beats don't stretch vertically. */
   .hud-beat-slot {
     position: relative;
-    min-height: 100px;
+    min-height: 92px;
   }
   .hud-beat-slot > * {
     position: absolute;
@@ -150,7 +151,7 @@
 
   /* Right HUD's beat-4 stack is taller (three stat tiles), so give its slot more height */
   .right-hud .hud-beat-slot {
-    min-height: 230px;
+    min-height: 220px;
   }
 
   .tray-wrap {
@@ -458,6 +459,8 @@
       padding: 28px 32px 52px;
       gap: 20px;
     }
+    .left-hud  { left: 32px;  width: 240px; }
+    .right-hud { right: 32px; width: 260px; }
     .caption-text { font-size: 32px; }
   }
 
@@ -467,6 +470,8 @@
       padding: 24px 24px 48px;
       gap: 16px;
     }
+    .left-hud  { left: 24px;  width: 200px; }
+    .right-hud { right: 24px; width: 200px; }
     .caption-text { font-size: 26px; }
     .hud-value { font-size: 11px; }
     .top-bar { font-size: 10px; }
