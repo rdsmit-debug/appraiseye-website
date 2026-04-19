@@ -1080,10 +1080,10 @@ footer .container {
       <li><a href="careers.html">Careers</a></li>
       <li><a href="#contact" class="nav-cta">Contact</a></li>
     </ul>
-    <button class="mobile-toggle" onclick="document.querySelector('.mobile-menu').classList.toggle('active'); this.textContent = this.textContent === '\u2630' ? '\u2715' : '\u2630';">&equiv;</button>
+    <button class="mobile-toggle" aria-label="Toggle navigation menu" aria-controls="mobile-menu" aria-expanded="false" onclick="const m=document.querySelector('.mobile-menu'); const o=m.classList.toggle('active'); this.setAttribute('aria-expanded', o); this.textContent = o ? '\u2715' : '\u2630';">&equiv;</button>
   </div>
 </nav>
-<div class="mobile-menu">
+<div class="mobile-menu" id="mobile-menu">
   <a href="#or-platform" onclick="this.parentElement.classList.remove('active')">OR Platform</a>
   <a href="#bodhi" onclick="this.parentElement.classList.remove('active')">Bodhi CGT</a>
   <a href="#publications" onclick="this.parentElement.classList.remove('active')">Publications</a>
