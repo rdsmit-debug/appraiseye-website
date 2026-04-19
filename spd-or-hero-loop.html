@@ -128,6 +128,7 @@
     flex-direction: column;
     gap: 10px;
     align-self: start;
+    margin-bottom: auto;
   }
 
   .left-hud { grid-column: 1; }
@@ -138,7 +139,7 @@
      to top-left of the slot so single-card beats don't stretch vertically. */
   .hud-beat-slot {
     position: relative;
-    min-height: 118px;
+    min-height: 100px;
   }
   .hud-beat-slot > * {
     position: absolute;
@@ -149,7 +150,7 @@
 
   /* Right HUD's beat-4 stack is taller (three stat tiles), so give its slot more height */
   .right-hud .hud-beat-slot {
-    min-height: 280px;
+    min-height: 230px;
   }
 
   .tray-wrap {
