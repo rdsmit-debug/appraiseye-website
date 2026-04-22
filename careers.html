@@ -145,13 +145,32 @@ nav {
   padding: 0.45rem 0.85rem;
   border-radius: var(--radius-sm);
   transition: all 0.2s;
+  position: relative;
 }
 .nav-links a:hover {
   color: var(--white);
   background: var(--surface-hover);
 }
 .nav-links a.active {
-  color: var(--purple-300);
+  color: var(--white);
+  background: var(--surface-hover);
+}
+.nav-links a:not(.nav-cta)::after {
+  content: '';
+  position: absolute;
+  left: 0.85rem;
+  right: 0.85rem;
+  bottom: 0.15rem;
+  height: 2px;
+  background: linear-gradient(90deg, var(--purple-400), var(--cyan-400));
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.3s ease;
+  border-radius: 1px;
+  pointer-events: none;
+}
+.nav-links a.active:not(.nav-cta)::after {
+  transform: scaleX(1);
 }
 .nav-cta {
   background: var(--purple-600) !important;
