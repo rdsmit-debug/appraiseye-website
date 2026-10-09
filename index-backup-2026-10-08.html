@@ -392,7 +392,7 @@ nav {
 }
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 2rem;
   text-align: center;
 }
@@ -1080,10 +1080,10 @@ footer .container {
       <li><a href="careers.html">Careers</a></li>
       <li><a href="#contact" class="nav-cta">Contact</a></li>
     </ul>
-    <button class="mobile-toggle" onclick="document.querySelector('.mobile-menu').classList.toggle('active'); this.textContent = this.textContent === '\u2630' ? '\u2715' : '\u2630';">&equiv;</button>
+    <button class="mobile-toggle" aria-label="Toggle navigation menu" aria-controls="mobile-menu" aria-expanded="false" onclick="const m=document.querySelector('.mobile-menu'); const o=m.classList.toggle('active'); this.setAttribute('aria-expanded', o); this.textContent = o ? '\u2715' : '\u2630';">&equiv;</button>
   </div>
 </nav>
-<div class="mobile-menu">
+<div class="mobile-menu" id="mobile-menu">
   <a href="#or-platform" onclick="this.parentElement.classList.remove('active')">OR Platform</a>
   <a href="#bodhi" onclick="this.parentElement.classList.remove('active')">Bodhi CGT</a>
   <a href="#publications" onclick="this.parentElement.classList.remove('active')">Publications</a>
@@ -1101,7 +1101,7 @@ footer .container {
     <div class="hero-content">
       <div class="hero-badge">Optimization Through AI Vision Systems</div>
       <h1>AI Vision for the <span class="gradient-text">Operating Room</span> & Cell & Gene Therapy</h1>
-      <p>Computer vision and AI that streamline surgical workflows, eliminate instrument redundancy, and automate CGT manufacturing.</p>
+      <p>Computer vision that streamlines surgical workflow and automates CGT manufacturing.</p>
       <div class="hero-ctas">
         <a href="#or-platform" class="btn-primary">Explore the Platform <span>&rarr;</span></a>
         <a href="#contact" class="btn-secondary">Get in Touch</a>
@@ -1124,10 +1124,6 @@ footer .container {
         <p>Reduced Instrument Burden</p>
       </div>
       <div class="stat-item">
-        <h3 class="gradient-text">2&times;</h3>
-        <p>Decreased Contamination Risk</p>
-      </div>
-      <div class="stat-item">
         <h3 class="gradient-text">8 min</h3>
         <p>Turnover Time Saved Per Case</p>
       </div>
@@ -1142,7 +1138,7 @@ footer .container {
 <!-- ===================== PARTNERS ===================== -->
 <section class="partners-section">
   <div class="container" style="text-align:center;">
-    <p class="section-eyebrow" style="justify-content:center;">Trusted Academic & Research Partners</p>
+    <p class="section-eyebrow" style="justify-content:center;">Trusted Academic Partners</p>
     <div class="partners-strip">
       <div class="partner-logo">Thomas Jefferson University</div>
       <div class="partner-logo">University College London</div>
@@ -1157,17 +1153,18 @@ footer .container {
   <div class="container">
     <p class="section-eyebrow">SPD-OR Platform</p>
     <h2 class="section-heading">Intelligent Surgical Workflow</h2>
-    <p class="section-desc">AI cameras that transform instrument tracking, tray composition, and OR turnover. Clinically validated at Thomas Jefferson University across neurosurgical and ENT specialties.</p>
+    <p class="section-desc">AI cameras that transform instrument tracking, tray composition, and OR turnover.</p>
 
     <!-- Split: instrument tray image + text -->
     <div class="split-layout" style="margin-bottom:3rem;">
       <div class="visual-panel">
-        <img src="542a1608-a7be-4503-898a-f29751a9b954.jpg" alt="AI-identified surgical instruments with color-coded tracking" decoding="async">
+        <div class="video-embed" style="padding-bottom: 78%; border:none;">
+          <iframe src="spd-or-sentinel.html" title="SPD-OR Sentinel animation" loading="lazy" aria-label="SPD-OR Sentinel animation loop"></iframe>
+        </div>
       </div>
       <div>
         <h3 style="font-size:1.35rem; color:var(--white); margin-bottom:1rem;">Real-Time Instrument Identification</h3>
-        <p style="color:var(--gray-400); margin-bottom:1.25rem; line-height:1.75;">Our AI classifies every instrument in the tray, tracks utilization, flags redundancies, and recommends optimized sets.</p>
-        <p style="color:var(--gray-400); margin-bottom:1.25rem; line-height:1.75;">At TJUH, we reduced a TLIF set from 100 to 40 instruments — 60% reduction, zero compromise in surgical capability.</p>
+        <p style="color:var(--gray-400); margin-bottom:1.25rem; line-height:1.75;">Our AI classifies every instrument in the tray, flags redundancies, and recommends optimized sets.</p>
         <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
           <span style="display:inline-flex; align-items:center; gap:0.4rem; background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.2); border-radius:6px; padding:0.3rem 0.7rem; font-size:0.8rem; color:var(--purple-300); font-weight:600;">60% Tray Reduction</span>
           <span style="display:inline-flex; align-items:center; gap:0.4rem; background:rgba(6,182,212,0.08); border:1px solid rgba(6,182,212,0.15); border-radius:6px; padding:0.3rem 0.7rem; font-size:0.8rem; color:var(--cyan-400); font-weight:600;">2.7 min / tray saved</span>
@@ -1179,17 +1176,17 @@ footer .container {
       <div class="card">
         <div class="card-icon">&#x1F4F9;</div>
         <h3>Instrument Tracking</h3>
-        <p>Real-time visibility on every instrument throughout each procedure. RFID tagging plus computer vision for a closed-loop, 100% visibility ecosystem.</p>
+        <p>Visibility on every instrument throughout each procedure.</p>
       </div>
       <div class="card">
         <div class="card-icon">&#x1F4CA;</div>
-        <h3>Utilization &amp; SPD Analytics</h3>
-        <p>Identify instruments that rarely leave the tray. Instrument verification, bioburden detection, and case data for evidence-based optimization.</p>
+        <h3>SPD Analytics</h3>
+        <p>Instrument verification, bioburden detection, and utilization analytics.</p>
       </div>
       <div class="card">
         <div class="card-icon">&#x26A1;</div>
-        <h3>Workflow &amp; Value</h3>
-        <p>Each additional tray adds 3 min to turnover. Streamlined sets cut idle time and maximize OR throughput.</p>
+        <h3>Value</h3>
+        <p>Each additional tray adds 3 min to turnover. Streamlined sets maximize throughput.</p>
       </div>
     </div>
 
@@ -1200,8 +1197,8 @@ footer .container {
         <div class="gallery-caption">AI-Powered OR Monitoring</div>
       </div>
       <div class="gallery-item">
-        <img src="IMG_5322.jpg" alt="Appraiseye analytics dashboard" loading="lazy" style="object-position: center top;" decoding="async">
-        <div class="gallery-caption">SPD Dashboard</div>
+        <img src="542a1608-a7be-4503-898a-f29751a9b954.jpg" alt="AI-identified surgical instruments with color-coded tracking" loading="lazy" decoding="async">
+        <div class="gallery-caption">SPD Validation</div>
       </div>
       <div class="gallery-item">
         <img src="conference-photo.jpg" alt="Surgical procedure with AI overlay" loading="lazy" decoding="async">
@@ -1216,7 +1213,7 @@ footer .container {
   <div class="container">
     <p class="section-eyebrow">Bodhi</p>
     <h2 class="section-heading">Automating CGT Production</h2>
-    <p class="section-desc">Suspension cell techniques cost $1M per patient. Bodhi's AI-guided automation dramatically reduces costs and scales access to therapies. NIH SBIR partnership with Temple University.</p>
+    <p class="section-desc">Bodhi's AI-guided automation dramatically reduces costs and scales access to therapies.</p>
 
     <div class="split-layout" style="margin-bottom:3rem;">
       <div>
@@ -1229,12 +1226,12 @@ footer .container {
           <div class="card">
             <div class="card-icon">&#x1F916;</div>
             <h3>Automated Roller Bottle Platform</h3>
-            <p>Closed-system robotic incubator with multi-layer concentric roller bottles. Automated feeding, environmental control, and programmable microenvironments per bottle. Available in 3&times;3 and 5&times;5 profiles.</p>
+            <p>Closed-system incubator with concentric roller bottles. Programmable microenvironments per bottle.</p>
           </div>
           <div class="card">
             <div class="card-icon">&#x1F9EC;</div>
             <h3>Scalable AAV Production</h3>
-            <p>Adherent 2D platform that mirrors discovery SOP at scale. HEK-293-based production with reproducible yields, high batch comparability, and low early-phase capex.</p>
+            <p>Adherent 2D platform that mirrors discovery SOP. High batch comparability and low early-phase capex.</p>
           </div>
         </div>
       </div>
@@ -1312,7 +1309,7 @@ footer .container {
   <div class="container">
     <p class="section-eyebrow">Press</p>
     <h2 class="section-heading">In the News</h2>
-    <p class="section-desc">Appraiseye in the press and peer-reviewed journals.</p>
+    <p class="section-desc">Appraiseye in the press.</p>
 
     <div class="news-grid">
       <a href="https://www.businessweekly.co.uk/posts/cambridge-scientists-say-virtual-child-and-other-ai-initiatives-can-create-new-drugs" target="_blank" class="news-card">
@@ -1418,10 +1415,6 @@ footer .container {
         <div class="contact-detail">
           <span class="contact-detail-icon">&#x2709;</span>
           <span>info@appraiseye.com</span>
-        </div>
-        <div class="contact-detail">
-          <span class="contact-detail-icon">&#x1F310;</span>
-          <span>appraiseye.io</span>
         </div>
         <div class="contact-detail">
           <span class="contact-detail-icon">&#x1F4CD;</span>
