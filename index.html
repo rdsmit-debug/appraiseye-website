@@ -243,6 +243,10 @@ nav.scrolled { background: rgba(9,7,26,0.72); backdrop-filter: blur(20px); -webk
 .partners { margin-top: 4rem; padding-top: 2.5rem; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 1.25rem 3rem; align-items: center; }
 .partners .pm-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--gray-600); width: 100%; }
 .partners span.partner { font-family: 'Space Grotesk', sans-serif; font-size: 0.95rem; font-weight: 500; color: var(--gray-400); }
+@media (min-width: 1100px) {   /* five partners on one row */
+  .partners { justify-content: space-between; column-gap: 1.25rem; }
+  .partners span.partner { font-size: 0.88rem; }
+}
 
 /* ========================================
    FEATURED + RESEARCH
@@ -528,6 +532,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
       <span class="partner">Thomas Jefferson University</span>
       <span class="partner">Temple University</span>
       <span class="partner">University College London</span>
+      <span class="partner">Cambridge University</span>
       <span class="partner">Babraham Research Campus</span>
     </div>
   </div>
@@ -572,7 +577,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
 <section class="twin" id="twin">
   <div class="container">
     <p class="chapter-label reveal">Program 02 · Spatial intelligence</p>
-    <h2 class="section-title reveal">From the tray to the whole operating room.</h2>
+    <h2 class="section-title reveal">From the tray to the OR.</h2>
     <p class="twin-lede reveal">Today our AI sees every instrument on the tray. Now we're teaching it to understand the entire room.</p>
   </div>
   <div class="pin-wrap">
@@ -673,12 +678,13 @@ footer .container { display: flex; justify-content: space-between; align-items: 
     <p class="chapter-label reveal">Team</p>
     <h2 class="section-title reveal">Medicine, AI, and cell &amp; gene therapy under one roof.</h2>
     <div class="team-row">
-      <div class="tm reveal"><div class="tm-avatar"><img src="Rupert-Smit.jpg" alt="Rupert Smit" loading="lazy"></div><h4>Rupert Smit, MD</h4><span>CEO</span></div>
-      <div class="tm reveal"><div class="tm-avatar"><img src="Emil Swanepoel.png" alt="Emil Swanepoel" loading="lazy"></div><h4>Emil Swanepoel</h4><span>CTO</span></div>
-      <div class="tm reveal"><div class="tm-avatar"><img src="Alwyn Smit.png" alt="Alwyn Smit" loading="lazy"></div><h4>Alwyn Smit</h4><span>COO</span></div>
+      <div class="tm reveal"><div class="tm-avatar"><img src="Rupert-Smit.jpg" alt="Rupert Smit" loading="lazy"></div><h4>Rupert Smit, MD</h4><span>Chief Executive Officer</span></div>
+      <div class="tm reveal"><div class="tm-avatar"><img src="Emil Swanepoel.png" alt="Emil Swanepoel" loading="lazy"></div><h4>Emil Swanepoel</h4><span>Chief Technology Officer</span></div>
+      <div class="tm reveal"><div class="tm-avatar"><img src="Alwyn Smit.png" alt="Alwyn Smit" loading="lazy"></div><h4>Alwyn Smit</h4><span>Chief Operating Officer</span></div>
       <div class="tm reveal"><div class="tm-avatar"><img src="Carol Ke.jpg" alt="Carol Ke" loading="lazy"></div><h4>Carol Ke, PhD</h4><span>Chief Scientific Officer</span></div>
       <div class="tm reveal"><div class="tm-avatar"><img src="Aria Mahtabfar.jpg" alt="Aria Mahtabfar" loading="lazy"></div><h4>Aria Mahtabfar, MD</h4><span>Director, Clinical Strategy</span></div>
       <div class="tm reveal"><div class="tm-avatar"><img src="Morgan Schilling.png" alt="Morgan Schilling" loading="lazy"></div><h4>Morgan Schilling</h4><span>Director, Medical Sales</span></div>
+      <div class="tm reveal"><div class="tm-avatar"><img src="Assets/karl-man.jpg" alt="Karl Man" loading="lazy"></div><h4>Karl Man</h4><span>Computer Vision Engineer</span></div>
       <div class="tm reveal"><div class="tm-avatar"><img src="Alexandria Bilder.png" alt="Alexandria Bilder" style="object-position: center 25%;" loading="lazy"></div><h4>Alexandria Bilder</h4><span>Advisor</span></div>
     </div>
     <a href="careers.html" class="text-cta reveal">Careers at Appraiseye <span>&rarr;</span></a>
