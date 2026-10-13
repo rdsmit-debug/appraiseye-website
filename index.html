@@ -79,7 +79,7 @@ button { font: inherit; }
 nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; border-bottom: 1px solid transparent; transition: background 0.4s, border-color 0.4s; }
 nav.scrolled { background: rgba(9,7,26,0.72); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
 .nav-inner { max-width: 1120px; margin: 0 auto; padding: 0 2rem; height: 72px; display: flex; align-items: center; justify-content: space-between; }
-.nav-logo img { height: 26px; width: auto; filter: brightness(1.8) saturate(1.2); }
+.nav-logo img { height: 26px; width: auto; }   /* pre-sized, colour-adjusted logo files: no browser rescaling or filter */
 .nav-links { display: flex; gap: 1.75rem; align-items: center; list-style: none; }
 .nav-links a { color: var(--gray-400); font-size: 0.85rem; font-weight: 500; transition: color 0.2s; }
 .nav-links a:hover { color: var(--white); }
@@ -402,7 +402,7 @@ footer .container { display: flex; justify-content: space-between; align-items: 
 <!-- ===================== NAV ===================== -->
 <nav id="nav">
   <div class="nav-inner">
-    <a href="#top" class="nav-logo"><img src="Appraiseye blue logo.png" alt="Appraiseye" decoding="async"></a>
+    <a href="#top" class="nav-logo"><img src="Assets/logo-purple-26.png" srcset="Assets/logo-purple-26.png 1x, Assets/logo-purple-52.png 2x, Assets/logo-purple-78.png 3x" width="163" height="26" alt="Appraiseye" decoding="async"></a>
     <ul class="nav-links">
       <li><a href="#or-platform">Operating Room</a></li>
       <li><a href="#bodhi">Bodhi CGT</a></li>
